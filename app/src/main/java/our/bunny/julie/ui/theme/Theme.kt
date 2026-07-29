@@ -1,68 +1,87 @@
 package our.bunny.julie.ui.theme
 
-import android.app.Activity
+import android.app.WallpaperManager
 import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.darkColorScheme
-import androidx.compose.material3.dynamicDarkColorScheme
-import androidx.compose.material3.dynamicLightColorScheme
-import androidx.compose.material3.lightColorScheme
+import androidx.compose.material3.MotionScheme
+import androidx.compose.material3.Shapes
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.remember
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalView
-import androidx.core.view.WindowCompat
+import androidx.compose.ui.unit.dp
 
-private val LightColors = lightColorScheme(
-    primary = md_theme_light_primary,
-    onPrimary = md_theme_light_onPrimary,
-    primaryContainer = md_theme_light_primaryContainer,
-    onPrimaryContainer = md_theme_light_onPrimaryContainer,
-    secondary = md_theme_light_secondary,
-    onSecondary = md_theme_light_onSecondary,
-    secondaryContainer = md_theme_light_secondaryContainer,
-    onSecondaryContainer = md_theme_light_onSecondaryContainer,
+// ─── Default seed: a warm earthy green suited to a pet health app ──────────────
+val DefaultSeedColor = Color(0xFF6B9E5E)
+
+// ─── Expressive shape scale ────────────────────────────────────────────────────
+// M3 Expressive bumps corners: ExtraSmall 4→4, Small 8→8, Medium 12→12,
+// Large 16→16, ExtraLarge 28→28 (new), ExtraExtraLarge 48dp (new).
+val ExpressiveShapes = Shapes(
+    extraSmall = RoundedCornerShape(4.dp),
+    small      = RoundedCornerShape(8.dp),
+    medium     = RoundedCornerShape(16.dp),       // slightly rounder than default 12dp
+    large      = RoundedCornerShape(24.dp),       // rounder than default 16dp
+    extraLarge = RoundedCornerShape(28.dp),       // M3 Expressive ExtraLarge
 )
 
-private val DarkColors = darkColorScheme(
-    primary = md_theme_dark_primary,
-    onPrimary = md_theme_dark_onPrimary,
-    primaryContainer = md_theme_dark_primaryContainer,
-    onPrimaryContainer = md_theme_dark_onPrimaryContainer,
-    secondary = md_theme_dark_secondary,
-    onSecondary = md_theme_dark_onSecondary,
-    secondaryContainer = md_theme_dark_secondaryContainer,
-    onSecondaryContainer = md_theme_dark_onSecondaryContainer,
-)
+// ─── Theme ─────────────────────────────────────────────────────────────────────
 
+/**
+ * Main app theme for Julie.
+ *
+ * @param darkTheme       Follow system dark mode by default.
+ * @param dynamicColor    When true and running on Android 12+, seeds the palette
+ *                        from the device wallpaper's primary color instead of [seedColor].
+ * @param paletteStyle    Which MaterialColorUtilities DynamicScheme variant to use.
+ * @param seedColor       Fallback seed colour used when [dynamicColor] is false or
+ *                        unavailable (API < 27).
+ */
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun JulieTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     dynamicColor: Boolean = true,
+    paletteStyle: PaletteStyle = PaletteStyle.TonalSpot,
+    seedColor: Color = DefaultSeedColor,
     content: @Composable () -> Unit
 ) {
-    val colorScheme = when {
-        dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
-            val context = LocalContext.current
-            if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
+    val context = LocalContext.current
+
+    val colorScheme = remember(darkTheme, dynamicColor, paletteStyle, seedColor) {
+        // --- Resolve seed ARGB --------------------------------------------------
+        val seedArgb: Int = when {
+            // On API 27+ we can read the wallpaper's primary colour as a seed.
+            // On API 31+ this is the same primary swatch the system's Monet engine sees.
+            dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1 -> {
+                runCatching {
+                    val wm = WallpaperManager.getInstance(context)
+                    wm.getWallpaperColors(WallpaperManager.FLAG_SYSTEM)
+                        ?.primaryColor
+                        ?.toArgb()
+                        ?: seedColor.toArgb()
+                }.getOrElse { seedColor.toArgb() }
+            }
+            else -> seedColor.toArgb()
         }
-        darkTheme -> DarkColors
-        else -> LightColors
-    }
-    val view = LocalView.current
-    if (!view.isInEditMode) {
-        SideEffect {
-            val window = (view.context as Activity).window
-            window.statusBarColor = colorScheme.primary.toArgb()
-            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = !darkTheme
-        }
+
+        // --- Build palette from seed + style ------------------------------------
+        buildColorScheme(
+            seedColorArgb  = seedArgb,
+            isDark         = darkTheme,
+            style          = paletteStyle,
+        )
     }
 
     MaterialTheme(
-        colorScheme = colorScheme,
-        typography = Typography,
-        content = content
+        colorScheme  = colorScheme,
+        typography   = ExpressiveTypography,
+        shapes       = ExpressiveShapes,
+        motionScheme = MotionScheme.expressive(),
+        content      = content,
     )
 }

@@ -8,12 +8,12 @@ plugins {
 
 android {
     namespace = "our.bunny.julie"
-    compileSdk = 34
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "our.bunny.julie"
         minSdk = 26
-        targetSdk = 34
+        targetSdk = 35
         versionCode = 1
         versionName = "1.0"
 
@@ -59,6 +59,7 @@ dependencies {
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
+    implementation(libs.androidx.material.icons.extended)
     implementation(libs.androidx.navigation.compose)
 
     // Room
@@ -79,6 +80,9 @@ dependencies {
 
     // Coil
     implementation(libs.coil.compose)
+
+    // Material Color Utilities (HCT, DynamicScheme, palette styles)
+    implementation(libs.material.color.utilities)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
