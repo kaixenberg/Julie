@@ -1,0 +1,27 @@
+# Android/Gradle
+*.iml
+.gradle/
+build/
+/captures
+.externalNativeBuild/
+.cxx/
+local.properties
+
+# IDE
+.idea/
+*.hprof
+
+# Kotlin
+.kotlin/
+
+# OS
+.DS_Store
+
+# Vibe-coding / AI tool artifacts
+Plans/
+.antigravity/
+.cursor/
+.windsurf/
+.aider*
+*.claude/
+.copilot/
