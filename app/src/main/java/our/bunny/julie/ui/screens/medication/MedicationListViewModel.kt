@@ -19,8 +19,8 @@ import our.bunny.julie.util.ReminderManager
 import our.bunny.julie.util.SearchUtil
 import javax.inject.Inject
 
-enum class MedicationSort { NAME, STATUS }
-enum class MedicationFilter { ALL, ACTIVE, PAUSED }
+enum class MedicationSort { FREQ_MOST, FREQ_LEAST, NAME_A_Z, NAME_Z_A }
+enum class MedicationFilter { ALL, ACTIVE, PAUSED, TYPE_PILL, TYPE_CAPSULE, TYPE_DROPS, TYPE_LIQUID, TYPE_INJECTION, TYPE_TOPICAL, TYPE_UNSPECIFIED }
 
 data class MedicationListUiState(
     val medications: List<Medication> = emptyList(),
@@ -37,7 +37,7 @@ class MedicationListViewModel @Inject constructor(
     val petId: Long = savedStateHandle.get<Long>("petId") ?: -1L
 
     val searchQuery = MutableStateFlow("")
-    val currentSort = MutableStateFlow(MedicationSort.NAME)
+    val currentSort = MutableStateFlow(MedicationSort.FREQ_MOST)
     val currentFilter = MutableStateFlow(MedicationFilter.ALL)
     val selectedIds = MutableStateFlow<Set<Long>>(emptySet())
 
@@ -54,6 +54,13 @@ class MedicationListViewModel @Inject constructor(
             MedicationFilter.ALL -> filtered
             MedicationFilter.ACTIVE -> filtered.filter { it.isActive }
             MedicationFilter.PAUSED -> filtered.filter { !it.isActive }
+            MedicationFilter.TYPE_PILL -> filtered.filter { it.medicationType == "Pill(s)" }
+            MedicationFilter.TYPE_CAPSULE -> filtered.filter { it.medicationType == "Capsule(s)" }
+            MedicationFilter.TYPE_DROPS -> filtered.filter { it.medicationType == "Drops" }
+            MedicationFilter.TYPE_LIQUID -> filtered.filter { it.medicationType == "Liquid" }
+            MedicationFilter.TYPE_INJECTION -> filtered.filter { it.medicationType == "Injection" }
+            MedicationFilter.TYPE_TOPICAL -> filtered.filter { it.medicationType == "Topical/Cream" }
+            MedicationFilter.TYPE_UNSPECIFIED -> filtered.filter { it.medicationType == "Unspecified" }
         }
 
         // Search
@@ -65,8 +72,10 @@ class MedicationListViewModel @Inject constructor(
 
         // Sort
         filtered = when (sort) {
-            MedicationSort.NAME -> filtered.sortedBy { it.name.lowercase() }
-            MedicationSort.STATUS -> filtered.sortedByDescending { it.isActive } // Active first
+            MedicationSort.FREQ_MOST -> filtered.sortedByDescending { it.schedules.size }
+            MedicationSort.FREQ_LEAST -> filtered.sortedBy { it.schedules.size }
+            MedicationSort.NAME_A_Z -> filtered.sortedBy { it.name.lowercase() }
+            MedicationSort.NAME_Z_A -> filtered.sortedByDescending { it.name.lowercase() }
         }
 
         MedicationListUiState(medications = filtered, isLoading = false)
@@ -103,13 +112,14 @@ class MedicationListViewModel @Inject constructor(
         }
     }
 
-    fun addOrUpdateMedication(id: Long, name: String, dosage: String, schedules: List<our.bunny.julie.domain.model.MedicationSchedule>, notes: String) {
+    fun addOrUpdateMedication(id: Long, name: String, dosage: String, medicationType: String, schedules: List<our.bunny.julie.domain.model.MedicationSchedule>, notes: String) {
         viewModelScope.launch {
             val med = Medication(
                 id = id,
                 petId = petId,
                 name = name,
                 dosage = dosage,
+                medicationType = medicationType,
                 isActive = true,
                 notes = notes,
                 schedules = schedules

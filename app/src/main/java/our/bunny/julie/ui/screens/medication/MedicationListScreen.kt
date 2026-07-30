@@ -24,6 +24,7 @@ import our.bunny.julie.domain.model.MedicationSchedule
 import our.bunny.julie.util.MedicationScheduleFormatter
 import our.bunny.julie.ui.components.TrackerListScaffold
 import our.bunny.julie.ui.components.SelectableEntryCard
+import our.bunny.julie.ui.components.MenuOption
 import java.time.DayOfWeek
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
@@ -56,18 +57,25 @@ fun MedicationListScreen(
         },
         showSearchOption = true,
         onSearchClick = { isSearchActive = true },
-        onSortClick = {
-            val nextSort = if (currentSort == MedicationSort.NAME) MedicationSort.STATUS else MedicationSort.NAME
-            viewModel.currentSort.value = nextSort
-        },
-        onFilterClick = {
-            val nextFilter = when (currentFilter) {
-                MedicationFilter.ALL -> MedicationFilter.ACTIVE
-                MedicationFilter.ACTIVE -> MedicationFilter.PAUSED
-                MedicationFilter.PAUSED -> MedicationFilter.ALL
-            }
-            viewModel.currentFilter.value = nextFilter
-        },
+        sortOptions = listOf(
+            MenuOption("Frequency: Most often first", currentSort == MedicationSort.FREQ_MOST) { viewModel.currentSort.value = MedicationSort.FREQ_MOST },
+            MenuOption("Frequency: Least often first", currentSort == MedicationSort.FREQ_LEAST) { viewModel.currentSort.value = MedicationSort.FREQ_LEAST },
+            MenuOption("Name: A to Z", currentSort == MedicationSort.NAME_A_Z) { viewModel.currentSort.value = MedicationSort.NAME_A_Z },
+            MenuOption("Name: Z to A", currentSort == MedicationSort.NAME_Z_A) { viewModel.currentSort.value = MedicationSort.NAME_Z_A }
+        ),
+        showFilterOption = true,
+        filterOptions = listOf(
+            MenuOption("All Medications", currentFilter == MedicationFilter.ALL) { viewModel.currentFilter.value = MedicationFilter.ALL },
+            MenuOption("Active Only", currentFilter == MedicationFilter.ACTIVE) { viewModel.currentFilter.value = MedicationFilter.ACTIVE },
+            MenuOption("Paused Only", currentFilter == MedicationFilter.PAUSED) { viewModel.currentFilter.value = MedicationFilter.PAUSED },
+            MenuOption("Pill(s)", currentFilter == MedicationFilter.TYPE_PILL) { viewModel.currentFilter.value = MedicationFilter.TYPE_PILL },
+            MenuOption("Capsule(s)", currentFilter == MedicationFilter.TYPE_CAPSULE) { viewModel.currentFilter.value = MedicationFilter.TYPE_CAPSULE },
+            MenuOption("Drops", currentFilter == MedicationFilter.TYPE_DROPS) { viewModel.currentFilter.value = MedicationFilter.TYPE_DROPS },
+            MenuOption("Liquid", currentFilter == MedicationFilter.TYPE_LIQUID) { viewModel.currentFilter.value = MedicationFilter.TYPE_LIQUID },
+            MenuOption("Injection", currentFilter == MedicationFilter.TYPE_INJECTION) { viewModel.currentFilter.value = MedicationFilter.TYPE_INJECTION },
+            MenuOption("Topical/Cream", currentFilter == MedicationFilter.TYPE_TOPICAL) { viewModel.currentFilter.value = MedicationFilter.TYPE_TOPICAL },
+            MenuOption("Unspecified", currentFilter == MedicationFilter.TYPE_UNSPECIFIED) { viewModel.currentFilter.value = MedicationFilter.TYPE_UNSPECIFIED }
+        ),
         isSearchActive = isSearchActive,
         searchQuery = searchQuery,
         onSearchQueryChange = { viewModel.searchQuery.value = it },
@@ -136,14 +144,8 @@ fun MedicationListScreen(
                     showAddDialog = false
                     editingMedication = null
                 },
-                onAdd = { name, dosage, schedules, notes ->
-                    // Since the current addMedication always inserts a new one or we can update it to take ID.
-                    // Wait, MedicationListViewModel's addMedication currently doesn't take an ID.
-                    // Let's pass the whole object or just ID. Wait, addMedication does not take ID.
-                    // We'll update the viewModel in another step, or just pass editingMedication.id here if we have it, but wait, addMedication doesn't accept id.
-                    // I'll update addMedication to take ID or just create an updateMedication.
-                    // For now, I'll pass the ID to a new viewModel function or use insertMedication via a new param.
-                    viewModel.addOrUpdateMedication(editingMedication?.id ?: 0L, name, dosage, schedules, notes)
+                onAdd = { name, dosage, medicationType, schedules, notes ->
+                    viewModel.addOrUpdateMedication(editingMedication?.id ?: 0L, name, dosage, medicationType, schedules, notes)
                     showAddDialog = false
                     editingMedication = null
                 }
@@ -188,11 +190,16 @@ fun MedicationCardContent(medication: Medication, onToggleStatus: () -> Unit) {
 fun AddMedicationDialog(
     editingMedication: Medication? = null,
     onDismiss: () -> Unit,
-    onAdd: (name: String, dosage: String, schedules: List<MedicationSchedule>, notes: String) -> Unit
+    onAdd: (name: String, dosage: String, medicationType: String, schedules: List<MedicationSchedule>, notes: String) -> Unit
 ) {
     var nameText by remember { mutableStateOf(editingMedication?.name ?: "") }
     
-    // Dosage text splitting logic (e.g. "1.5 pill(s)")
+    val medicationTypes = listOf("Pill(s)", "Capsule(s)", "Drops", "Liquid", "Injection", "Topical/Cream", "Unspecified")
+    val defaultType = "Pill(s)"
+    var selectedType by remember { mutableStateOf(editingMedication?.medicationType ?: defaultType) }
+    var expandedType by remember { mutableStateOf(false) }
+
+    // Dosage text splitting logic
     val units = listOf("pill(s)", "capsule(s)", "drops", "ml", "mg", "g", "tsp", "tbsp")
     val defaultUnit = "pill(s)"
     
@@ -291,6 +298,35 @@ fun AddMedicationDialog(
                     label = { Text("Medication Name") },
                     modifier = Modifier.fillMaxWidth()
                 )
+                ExposedDropdownMenuBox(
+                    expanded = expandedType,
+                    onExpandedChange = { expandedType = !expandedType },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    OutlinedTextField(
+                        value = selectedType,
+                        onValueChange = {},
+                        readOnly = true,
+                        label = { Text("Medication Type") },
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedType) },
+                        colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors(),
+                        modifier = Modifier.menuAnchor().fillMaxWidth()
+                    )
+                    ExposedDropdownMenu(
+                        expanded = expandedType,
+                        onDismissRequest = { expandedType = false }
+                    ) {
+                        medicationTypes.forEach { type ->
+                            DropdownMenuItem(
+                                text = { Text(type) },
+                                onClick = {
+                                    selectedType = type
+                                    expandedType = false
+                                }
+                            )
+                        }
+                    }
+                }
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
                     OutlinedTextField(
                         value = dosageText,
@@ -398,7 +434,7 @@ fun AddMedicationDialog(
                 onClick = {
                     if (nameText.isNotBlank() && dosageText.isNotBlank() && schedules.isNotEmpty()) {
                         val combinedDosage = "$dosageText $selectedUnit".trim()
-                        onAdd(nameText, combinedDosage, schedules, notesText)
+                        onAdd(nameText, combinedDosage, selectedType, schedules, notesText)
                     }
                 },
                 enabled = nameText.isNotBlank() && dosageText.isNotBlank() && schedules.isNotEmpty()

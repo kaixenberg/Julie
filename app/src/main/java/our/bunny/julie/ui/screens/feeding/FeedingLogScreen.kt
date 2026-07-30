@@ -17,6 +17,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import our.bunny.julie.domain.model.FeedingLog
 import our.bunny.julie.ui.components.SelectableEntryCard
 import our.bunny.julie.ui.components.TrackerListScaffold
+import our.bunny.julie.ui.components.MenuOption
 import java.time.format.DateTimeFormatter
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -47,26 +48,21 @@ fun FeedingLogScreen(
         },
         showSearchOption = true,
         onSearchClick = { isSearchActive = true },
-        onSortClick = {
-            val nextSort = when (currentSort) {
-                FeedingLogSort.DATE_NEWEST -> FeedingLogSort.DATE_OLDEST
-                FeedingLogSort.DATE_OLDEST -> FeedingLogSort.CALORIES_HIGH
-                FeedingLogSort.CALORIES_HIGH -> FeedingLogSort.CALORIES_LOW
-                FeedingLogSort.CALORIES_LOW -> FeedingLogSort.DATE_NEWEST
-            }
-            viewModel.currentSort.value = nextSort
-        },
-        onFilterClick = {
-            val nextFilter = when (currentFilter) {
-                FeedingLogFilter.ALL -> FeedingLogFilter.BREAKFAST
-                FeedingLogFilter.BREAKFAST -> FeedingLogFilter.LUNCH
-                FeedingLogFilter.LUNCH -> FeedingLogFilter.DINNER
-                FeedingLogFilter.DINNER -> FeedingLogFilter.SNACK
-                FeedingLogFilter.SNACK -> FeedingLogFilter.CUSTOM
-                FeedingLogFilter.CUSTOM -> FeedingLogFilter.ALL
-            }
-            viewModel.currentFilter.value = nextFilter
-        },
+        sortOptions = listOf(
+            MenuOption("Date: Newest first", currentSort == FeedingLogSort.DATE_NEWEST) { viewModel.currentSort.value = FeedingLogSort.DATE_NEWEST },
+            MenuOption("Date: Oldest first", currentSort == FeedingLogSort.DATE_OLDEST) { viewModel.currentSort.value = FeedingLogSort.DATE_OLDEST },
+            MenuOption("Calories: High to Low", currentSort == FeedingLogSort.CALORIES_HIGH) { viewModel.currentSort.value = FeedingLogSort.CALORIES_HIGH },
+            MenuOption("Calories: Low to High", currentSort == FeedingLogSort.CALORIES_LOW) { viewModel.currentSort.value = FeedingLogSort.CALORIES_LOW }
+        ),
+        showFilterOption = true,
+        filterOptions = listOf(
+            MenuOption("All Meals", currentFilter == FeedingLogFilter.ALL) { viewModel.currentFilter.value = FeedingLogFilter.ALL },
+            MenuOption("Breakfast", currentFilter == FeedingLogFilter.BREAKFAST) { viewModel.currentFilter.value = FeedingLogFilter.BREAKFAST },
+            MenuOption("Lunch", currentFilter == FeedingLogFilter.LUNCH) { viewModel.currentFilter.value = FeedingLogFilter.LUNCH },
+            MenuOption("Dinner", currentFilter == FeedingLogFilter.DINNER) { viewModel.currentFilter.value = FeedingLogFilter.DINNER },
+            MenuOption("Snack", currentFilter == FeedingLogFilter.SNACK) { viewModel.currentFilter.value = FeedingLogFilter.SNACK },
+            MenuOption("Custom", currentFilter == FeedingLogFilter.CUSTOM) { viewModel.currentFilter.value = FeedingLogFilter.CUSTOM }
+        ),
         isSearchActive = isSearchActive,
         searchQuery = searchQuery,
         onSearchQueryChange = { viewModel.searchQuery.value = it },

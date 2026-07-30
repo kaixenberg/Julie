@@ -21,6 +21,7 @@ import our.bunny.julie.util.UnitFormatter
 import our.bunny.julie.util.WaterUnit
 import our.bunny.julie.ui.components.SelectableEntryCard
 import our.bunny.julie.ui.components.TrackerListScaffold
+import our.bunny.julie.ui.components.MenuOption
 import java.time.format.DateTimeFormatter
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -49,23 +50,13 @@ fun WaterTrackerScreen(
         },
         showSearchOption = false,
         onSearchClick = { }, // No-op
-        onSortClick = {
-            val nextSort = when (currentSort) {
-                WaterSort.DATE_NEWEST -> WaterSort.DATE_OLDEST
-                WaterSort.DATE_OLDEST -> WaterSort.AMOUNT_HIGH
-                WaterSort.AMOUNT_HIGH -> WaterSort.AMOUNT_LOW
-                WaterSort.AMOUNT_LOW -> WaterSort.DATE_NEWEST
-            }
-            viewModel.currentSort.value = nextSort
-        },
-        onFilterClick = {
-            val nextFilter = when (currentFilter) {
-                WaterFilter.ALL_TIME -> WaterFilter.LAST_7_DAYS
-                WaterFilter.LAST_7_DAYS -> WaterFilter.LAST_30_DAYS
-                WaterFilter.LAST_30_DAYS -> WaterFilter.ALL_TIME
-            }
-            viewModel.currentFilter.value = nextFilter
-        },
+        showFilterOption = false,
+        sortOptions = listOf(
+            MenuOption("Date: Newest first", currentSort == WaterSort.DATE_NEWEST) { viewModel.currentSort.value = WaterSort.DATE_NEWEST },
+            MenuOption("Date: Oldest first", currentSort == WaterSort.DATE_OLDEST) { viewModel.currentSort.value = WaterSort.DATE_OLDEST },
+            MenuOption("Amount: High to Low", currentSort == WaterSort.AMOUNT_HIGH) { viewModel.currentSort.value = WaterSort.AMOUNT_HIGH },
+            MenuOption("Amount: Low to High", currentSort == WaterSort.AMOUNT_LOW) { viewModel.currentSort.value = WaterSort.AMOUNT_LOW }
+        ),
         isSearchActive = false,
         searchQuery = "",
         onSearchQueryChange = { },

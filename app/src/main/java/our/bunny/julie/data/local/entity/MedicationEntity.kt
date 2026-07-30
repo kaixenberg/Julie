@@ -23,6 +23,7 @@ data class MedicationEntity(
     val petId: Long,
     val name: String,
     val dosage: String,
+    val medicationType: String,
     val isActive: Boolean,
     val notes: String
 ) {
@@ -33,6 +34,7 @@ data class MedicationEntity(
                 petId = model.petId,
                 name = model.name,
                 dosage = model.dosage,
+                medicationType = model.medicationType,
                 isActive = model.isActive,
                 notes = model.notes
             )

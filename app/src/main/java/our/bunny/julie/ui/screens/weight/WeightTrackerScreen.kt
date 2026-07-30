@@ -23,6 +23,7 @@ import our.bunny.julie.util.UnitFormatter
 import our.bunny.julie.util.WeightUnit
 import our.bunny.julie.ui.components.SelectableEntryCard
 import our.bunny.julie.ui.components.TrackerListScaffold
+import our.bunny.julie.ui.components.MenuOption
 import java.time.format.DateTimeFormatter
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -53,25 +54,13 @@ fun WeightTrackerScreen(
         },
         showSearchOption = true,
         onSearchClick = { isSearchActive = true },
-        onSortClick = {
-            val nextSort = when (currentSort) {
-                WeightSort.DATE_NEWEST -> WeightSort.DATE_OLDEST
-                WeightSort.DATE_OLDEST -> WeightSort.WEIGHT_HIGH
-                WeightSort.WEIGHT_HIGH -> WeightSort.WEIGHT_LOW
-                WeightSort.WEIGHT_LOW -> WeightSort.DATE_NEWEST
-            }
-            viewModel.currentSort.value = nextSort
-        },
-        onFilterClick = {
-            val nextFilter = when (currentFilter) {
-                WeightFilter.ALL_TIME -> WeightFilter.LAST_7_DAYS
-                WeightFilter.LAST_7_DAYS -> WeightFilter.LAST_30_DAYS
-                WeightFilter.LAST_30_DAYS -> WeightFilter.LAST_6_MONTHS
-                WeightFilter.LAST_6_MONTHS -> WeightFilter.LAST_YEAR
-                WeightFilter.LAST_YEAR -> WeightFilter.ALL_TIME
-            }
-            viewModel.currentFilter.value = nextFilter
-        },
+        showFilterOption = false,
+        sortOptions = listOf(
+            MenuOption("Date: Newest first", currentSort == WeightSort.DATE_NEWEST) { viewModel.currentSort.value = WeightSort.DATE_NEWEST },
+            MenuOption("Date: Oldest first", currentSort == WeightSort.DATE_OLDEST) { viewModel.currentSort.value = WeightSort.DATE_OLDEST },
+            MenuOption("Weight: High to Low", currentSort == WeightSort.WEIGHT_HIGH) { viewModel.currentSort.value = WeightSort.WEIGHT_HIGH },
+            MenuOption("Weight: Low to High", currentSort == WeightSort.WEIGHT_LOW) { viewModel.currentSort.value = WeightSort.WEIGHT_LOW }
+        ),
         isSearchActive = isSearchActive,
         searchQuery = searchQuery,
         onSearchQueryChange = { viewModel.searchQuery.value = it },

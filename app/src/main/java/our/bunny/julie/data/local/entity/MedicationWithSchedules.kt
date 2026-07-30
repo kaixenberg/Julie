@@ -18,6 +18,7 @@ data class MedicationWithSchedules(
             petId = medication.petId,
             name = medication.name,
             dosage = medication.dosage,
+            medicationType = medication.medicationType,
             isActive = medication.isActive,
             notes = medication.notes,
             schedules = schedules.map { it.toDomainModel() }

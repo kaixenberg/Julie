@@ -21,7 +21,7 @@ import our.bunny.julie.data.local.entity.MedicationScheduleEntity
         MedicationEntity::class,
         MedicationScheduleEntity::class
     ],
-    version = 6,
+    version = 7,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
@@ -120,6 +120,41 @@ abstract class PetDatabase : RoomDatabase() {
                 database.execSQL("""
                     INSERT INTO `medications_new` (`id`, `petId`, `name`, `dosage`, `isActive`, `notes`)
                     SELECT `id`, `petId`, `name`, `dosage`, `isActive`, `notes` FROM `medications`
+                """)
+                
+                database.execSQL("DROP TABLE `medications`")
+                database.execSQL("ALTER TABLE `medications_new` RENAME TO `medications`")
+                database.execSQL("CREATE INDEX IF NOT EXISTS `index_medications_petId` ON `medications` (`petId`)")
+            }
+        }
+
+        val MIGRATION_6_7 = object : androidx.room.migration.Migration(6, 7) {
+            override fun migrate(database: androidx.sqlite.db.SupportSQLiteDatabase) {
+                database.execSQL("""
+                    CREATE TABLE IF NOT EXISTS `medications_new` (
+                        `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, 
+                        `petId` INTEGER NOT NULL, 
+                        `name` TEXT NOT NULL, 
+                        `dosage` TEXT NOT NULL, 
+                        `medicationType` TEXT NOT NULL, 
+                        `isActive` INTEGER NOT NULL, 
+                        `notes` TEXT NOT NULL, 
+                        FOREIGN KEY(`petId`) REFERENCES `pets`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE
+                    )
+                """)
+                
+                database.execSQL("""
+                    INSERT INTO `medications_new` (`id`, `petId`, `name`, `dosage`, `medicationType`, `isActive`, `notes`)
+                    SELECT `id`, `petId`, `name`, `dosage`,
+                    CASE 
+                        WHEN `dosage` LIKE '%pill(s)%' THEN 'Pill(s)'
+                        WHEN `dosage` LIKE '%capsule(s)%' THEN 'Capsule(s)'
+                        WHEN `dosage` LIKE '%drops%' THEN 'Drops'
+                        WHEN `dosage` LIKE '%ml%' OR `dosage` LIKE '%tsp%' OR `dosage` LIKE '%tbsp%' THEN 'Liquid'
+                        WHEN `dosage` LIKE '%mg%' OR `dosage` LIKE '%g%' THEN 'Pill(s)'
+                        ELSE 'Unspecified'
+                    END,
+                    `isActive`, `notes` FROM `medications`
                 """)
                 
                 database.execSQL("DROP TABLE `medications`")

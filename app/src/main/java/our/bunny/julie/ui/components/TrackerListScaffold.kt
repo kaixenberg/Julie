@@ -13,6 +13,15 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.foundation.layout.padding
+import androidx.compose.ui.unit.dp
+import androidx.compose.material.icons.filled.Check
+
+data class MenuOption(
+    val label: String,
+    val isSelected: Boolean,
+    val onClick: () -> Unit
+)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -26,8 +35,9 @@ fun TrackerListScaffold(
     onDeleteSelected: () -> Unit,
     showSearchOption: Boolean = true,
     onSearchClick: () -> Unit,
-    onSortClick: () -> Unit,
-    onFilterClick: () -> Unit,
+    showFilterOption: Boolean = true,
+    sortOptions: List<MenuOption> = emptyList(),
+    filterOptions: List<MenuOption> = emptyList(),
     isSearchActive: Boolean,
     searchQuery: String,
     onSearchQueryChange: (String) -> Unit,
@@ -117,21 +127,51 @@ fun TrackerListScaffold(
                                         onSearchClick()
                                     }
                                 )
+                                HorizontalDivider()
                             }
-                            DropdownMenuItem(
-                                text = { Text("Sort") },
-                                onClick = {
-                                    overflowMenuExpanded = false
-                                    onSortClick()
+                            
+                            if (sortOptions.isNotEmpty()) {
+                                Text(
+                                    "Sort By", 
+                                    style = MaterialTheme.typography.labelSmall, 
+                                    color = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
+                                )
+                                sortOptions.forEach { option ->
+                                    DropdownMenuItem(
+                                        text = { Text(option.label) },
+                                        trailingIcon = if (option.isSelected) {
+                                            { Icon(androidx.compose.material.icons.Icons.Default.Check, contentDescription = "Selected") }
+                                        } else null,
+                                        onClick = {
+                                            overflowMenuExpanded = false
+                                            option.onClick()
+                                        }
+                                    )
                                 }
-                            )
-                            DropdownMenuItem(
-                                text = { Text("Filter") },
-                                onClick = {
-                                    overflowMenuExpanded = false
-                                    onFilterClick()
+                            }
+
+                            if (showFilterOption && filterOptions.isNotEmpty()) {
+                                HorizontalDivider()
+                                Text(
+                                    "Filter By", 
+                                    style = MaterialTheme.typography.labelSmall, 
+                                    color = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
+                                )
+                                filterOptions.forEach { option ->
+                                    DropdownMenuItem(
+                                        text = { Text(option.label) },
+                                        trailingIcon = if (option.isSelected) {
+                                            { Icon(androidx.compose.material.icons.Icons.Default.Check, contentDescription = "Selected") }
+                                        } else null,
+                                        onClick = {
+                                            overflowMenuExpanded = false
+                                            option.onClick()
+                                        }
+                                    )
                                 }
-                            )
+                            }
                         }
                     },
                     colors = TopAppBarDefaults.topAppBarColors(

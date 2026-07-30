@@ -5,6 +5,7 @@ data class Medication(
     val petId: Long,
     val name: String,
     val dosage: String,
+    val medicationType: String,
     val isActive: Boolean,
     val notes: String,
     val schedules: List<MedicationSchedule>
