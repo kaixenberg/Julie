@@ -6,6 +6,5 @@ data class WaterLog(
     val id: Long = 0,
     val petId: Long,
     val amount: Float,
-    val unit: String,
     val time: LocalDateTime
 )

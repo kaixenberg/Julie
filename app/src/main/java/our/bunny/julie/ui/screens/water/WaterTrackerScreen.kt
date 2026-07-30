@@ -19,6 +19,8 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import our.bunny.julie.domain.model.WaterLog
+import our.bunny.julie.util.UnitFormatter
+import our.bunny.julie.util.WaterUnit
 import java.time.format.DateTimeFormatter
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -76,6 +78,7 @@ fun WaterTrackerScreen(
                     )
                     WaterBarChart(
                         entries = uiState.entries,
+                        waterUnit = uiState.waterUnit,
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(150.dp)
@@ -91,6 +94,7 @@ fun WaterTrackerScreen(
                     items(uiState.entries) { entry ->
                         WaterEntryCard(
                             entry = entry,
+                            waterUnit = uiState.waterUnit,
                             onDelete = { viewModel.deleteWaterEntry(entry) }
                         )
                     }
@@ -100,6 +104,7 @@ fun WaterTrackerScreen(
 
         if (showAddDialog) {
             AddWaterDialog(
+                defaultUnit = uiState.waterUnit,
                 onDismiss = { showAddDialog = false },
                 onAdd = { amount, unit ->
                     viewModel.addWaterEntry(amount, unit)
@@ -111,7 +116,7 @@ fun WaterTrackerScreen(
 }
 
 @Composable
-fun WaterEntryCard(entry: WaterLog, onDelete: () -> Unit) {
+fun WaterEntryCard(entry: WaterLog, waterUnit: WaterUnit, onDelete: () -> Unit) {
     val formatter = DateTimeFormatter.ofPattern("MMM dd, yyyy HH:mm")
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -124,7 +129,7 @@ fun WaterEntryCard(entry: WaterLog, onDelete: () -> Unit) {
         ) {
             Column {
                 Text(
-                    text = "${entry.amount} ${entry.unit}",
+                    text = UnitFormatter.formatWater(entry.amount, waterUnit),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold
                 )
@@ -142,11 +147,12 @@ fun WaterEntryCard(entry: WaterLog, onDelete: () -> Unit) {
 
 @Composable
 fun AddWaterDialog(
+    defaultUnit: WaterUnit,
     onDismiss: () -> Unit,
-    onAdd: (amount: Float, unit: String) -> Unit
+    onAdd: (amount: Float, unit: WaterUnit) -> Unit
 ) {
     var amountText by remember { mutableStateOf("") }
-    var unit by remember { mutableStateOf("ml") }
+    var unit by remember { mutableStateOf(defaultUnit) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -167,11 +173,11 @@ fun AddWaterDialog(
                 ) {
                     Text("Unit:")
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        RadioButton(selected = unit == "ml", onClick = { unit = "ml" })
+                        RadioButton(selected = unit == WaterUnit.ML, onClick = { unit = WaterUnit.ML })
                         Text("ml")
                     }
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        RadioButton(selected = unit == "oz", onClick = { unit = "oz" })
+                        RadioButton(selected = unit == WaterUnit.OZ, onClick = { unit = WaterUnit.OZ })
                         Text("oz")
                     }
                 }
@@ -198,7 +204,7 @@ fun AddWaterDialog(
 }
 
 @Composable
-fun WaterBarChart(entries: List<WaterLog>, modifier: Modifier = Modifier) {
+fun WaterBarChart(entries: List<WaterLog>, waterUnit: WaterUnit, modifier: Modifier = Modifier) {
     if (entries.isEmpty()) return
 
     // Group by day of year for the last 7 days
@@ -207,9 +213,10 @@ fun WaterBarChart(entries: List<WaterLog>, modifier: Modifier = Modifier) {
     
     val grouped = entries.groupBy { it.time.toLocalDate() }
     
-    // Map to daily totals (converting oz to ml roughly for chart scale if mixed, but let's assume same unit for simplicity)
+    // Map to daily totals correctly converting to display unit
     val dailyTotals = last7Days.map { date ->
-        grouped[date]?.sumOf { it.amount.toDouble() }?.toFloat() ?: 0f
+        val sumCanonical = grouped[date]?.sumOf { it.amount.toDouble() }?.toFloat() ?: 0f
+        UnitFormatter.getWaterInDisplayUnit(sumCanonical, waterUnit)
     }
     
     val maxAmount = dailyTotals.maxOrNull()?.coerceAtLeast(1f) ?: 1f

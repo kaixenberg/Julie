@@ -21,6 +21,8 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import our.bunny.julie.domain.model.WeightEntry
+import our.bunny.julie.util.UnitFormatter
+import our.bunny.julie.util.WeightUnit
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -77,6 +79,7 @@ fun WeightTrackerScreen(
                     )
                     WeightChart(
                         entries = uiState.entries.sortedBy { it.date }, // chronological order for chart
+                        weightUnit = uiState.weightUnit,
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(150.dp)
@@ -92,6 +95,7 @@ fun WeightTrackerScreen(
                     items(uiState.entries) { entry ->
                         WeightEntryCard(
                             entry = entry,
+                            weightUnit = uiState.weightUnit,
                             onDelete = { viewModel.deleteWeightEntry(entry) }
                         )
                     }
@@ -101,6 +105,7 @@ fun WeightTrackerScreen(
 
         if (showAddDialog) {
             AddWeightDialog(
+                defaultUnit = uiState.weightUnit,
                 onDismiss = { showAddDialog = false },
                 onAdd = { weight, unit, notes ->
                     viewModel.addWeightEntry(weight, unit, notes)
@@ -112,7 +117,7 @@ fun WeightTrackerScreen(
 }
 
 @Composable
-fun WeightEntryCard(entry: WeightEntry, onDelete: () -> Unit) {
+fun WeightEntryCard(entry: WeightEntry, weightUnit: WeightUnit, onDelete: () -> Unit) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
@@ -124,7 +129,7 @@ fun WeightEntryCard(entry: WeightEntry, onDelete: () -> Unit) {
         ) {
             Column {
                 Text(
-                    text = "${entry.weight} ${entry.unit}",
+                    text = UnitFormatter.formatWeight(entry.weight, weightUnit),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold
                 )
@@ -149,11 +154,12 @@ fun WeightEntryCard(entry: WeightEntry, onDelete: () -> Unit) {
 
 @Composable
 fun AddWeightDialog(
+    defaultUnit: WeightUnit,
     onDismiss: () -> Unit,
-    onAdd: (weight: Float, unit: String, notes: String) -> Unit
+    onAdd: (weight: Float, unit: WeightUnit, notes: String) -> Unit
 ) {
     var weightText by remember { mutableStateOf("") }
-    var unit by remember { mutableStateOf("kg") } // default
+    var unit by remember { mutableStateOf(defaultUnit) } // default
     var notes by remember { mutableStateOf("") }
 
     AlertDialog(
@@ -175,11 +181,11 @@ fun AddWeightDialog(
                 ) {
                     Text("Unit:")
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        RadioButton(selected = unit == "kg", onClick = { unit = "kg" })
+                        RadioButton(selected = unit == WeightUnit.KG, onClick = { unit = WeightUnit.KG })
                         Text("kg")
                     }
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        RadioButton(selected = unit == "lbs", onClick = { unit = "lbs" })
+                        RadioButton(selected = unit == WeightUnit.LBS, onClick = { unit = WeightUnit.LBS })
                         Text("lbs")
                     }
                 }
@@ -213,11 +219,13 @@ fun AddWeightDialog(
 }
 
 @Composable
-fun WeightChart(entries: List<WeightEntry>, modifier: Modifier = Modifier) {
+fun WeightChart(entries: List<WeightEntry>, weightUnit: WeightUnit, modifier: Modifier = Modifier) {
     if (entries.isEmpty()) return
     
-    val maxWeight = entries.maxOf { it.weight }
-    val minWeight = entries.minOf { it.weight }
+    val displayValues = entries.map { UnitFormatter.getWeightInDisplayUnit(it.weight, weightUnit) }
+    
+    val maxWeight = displayValues.maxOrNull() ?: return
+    val minWeight = displayValues.minOrNull() ?: return
     val range = (maxWeight - minWeight).coerceAtLeast(1f) // Avoid divide by zero
     
     val lineColor = MaterialTheme.colorScheme.primary
@@ -228,9 +236,10 @@ fun WeightChart(entries: List<WeightEntry>, modifier: Modifier = Modifier) {
         val stepX = width / (entries.size - 1).coerceAtLeast(1).toFloat()
         
         val path = Path()
-        entries.forEachIndexed { index, entry ->
+        entries.forEachIndexed { index, _ ->
+            val displayWeight = displayValues[index]
             val x = index * stepX
-            val y = height - ((entry.weight - minWeight) / range) * height
+            val y = height - ((displayWeight - minWeight) / range) * height
             if (index == 0) {
                 path.moveTo(x, y)
             } else {

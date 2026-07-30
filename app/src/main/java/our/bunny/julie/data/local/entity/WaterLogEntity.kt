@@ -23,7 +23,6 @@ data class WaterLogEntity(
     val id: Long = 0,
     val petId: Long,
     val amount: Float,
-    val unit: String,
     val time: LocalDateTime
 ) {
     fun toDomainModel(): WaterLog {
@@ -31,7 +30,6 @@ data class WaterLogEntity(
             id = id,
             petId = petId,
             amount = amount,
-            unit = unit,
             time = time
         )
     }
@@ -42,7 +40,6 @@ data class WaterLogEntity(
                 id = model.id,
                 petId = model.petId,
                 amount = model.amount,
-                unit = model.unit,
                 time = model.time
             )
         }

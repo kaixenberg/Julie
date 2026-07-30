@@ -17,6 +17,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import our.bunny.julie.ui.screens.home.PetAvatar
+import our.bunny.julie.util.UnitFormatter
 import android.content.Intent
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.runtime.LaunchedEffect
@@ -171,8 +172,8 @@ fun PetDetailScreen(
 
                 // Tracker Cards
                 TrackerCard(
-                    title = "Weight Tracker",
-                    value = uiState.latestWeight?.let { "${it.weight} ${it.unit}" } ?: "No data",
+                    title = "Weight",
+                    value = uiState.latestWeight?.let { UnitFormatter.formatWeight(it.weight, uiState.weightUnit) } ?: "No data",
                     subtitle = uiState.latestWeight?.date?.toLocalDate()?.toString() ?: "Tap to add",
                     onClick = { onNavigateToWeightTracker(pet.id) }
                 )
@@ -185,9 +186,9 @@ fun PetDetailScreen(
                 )
 
                 TrackerCard(
-                    title = "Water Today",
-                    value = "${uiState.todayWater} ml", // default to ml for now
-                    subtitle = "Tap to add",
+                    title = "Water",
+                    value = UnitFormatter.formatWater(uiState.todayWater, uiState.waterUnit),
+                    subtitle = "Today",
                     onClick = { onNavigateToWaterTracker(pet.id) }
                 )
 

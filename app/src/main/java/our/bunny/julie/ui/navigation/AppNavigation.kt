@@ -84,7 +84,7 @@ fun AppNavigation(navController: NavHostController, onOpenDrawer: () -> Unit) {
         }
         composable(Screen.Settings.route) {
             JulieAppScaffold(title = "Settings", onOpenDrawer = onOpenDrawer) { innerPadding ->
-                PlaceholderScreen("Settings", innerPadding)
+                our.bunny.julie.ui.screens.settings.SettingsScreen(innerPadding)
             }
         }
         composable(
@@ -126,7 +126,10 @@ fun AppNavigation(navController: NavHostController, onOpenDrawer: () -> Unit) {
                 StatType.Medication.name -> {
                     MedicationListScreen(onNavigateUp = { navController.navigateUp() })
                 }
-                else -> {
+                StatType.Timeline.name -> {
+            our.bunny.julie.ui.screens.timeline.TimelineScreen(onNavigateUp = { navController.navigateUp() })
+        }
+        else -> {
                     JulieAppScaffold(title = "$statTypeStr", onOpenDrawer = onOpenDrawer) { innerPadding ->
                         PlaceholderScreen("Pet Stat Detail - ID: $petId, Stat: $statTypeStr", innerPadding)
                     }

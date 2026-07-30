@@ -7,6 +7,5 @@ data class WeightEntry(
     val petId: Long,
     val date: LocalDateTime,
     val weight: Float,
-    val unit: String,
     val notes: String
 )

@@ -9,13 +9,16 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import our.bunny.julie.domain.model.PetHealthReport
 import our.bunny.julie.domain.model.TimelineEvent
+import our.bunny.julie.util.UnitFormatter
+import our.bunny.julie.util.WaterUnit
+import our.bunny.julie.util.WeightUnit
 import java.io.File
 import java.io.FileOutputStream
 import java.time.format.DateTimeFormatter
 
 object PdfGenerator {
     
-    suspend fun generateReport(context: Context, report: PetHealthReport): File = withContext(Dispatchers.IO) {
+    suspend fun generateReport(context: Context, report: PetHealthReport, weightUnit: WeightUnit, waterUnit: WaterUnit): File = withContext(Dispatchers.IO) {
         val document = PdfDocument()
         val pageInfo = PdfDocument.PageInfo.Builder(595, 842, 1).create() // A4 size
         var page = document.startPage(pageInfo)
@@ -189,7 +192,8 @@ object PdfGenerator {
                 val timeStr = event.timestamp.format(timeFormatter)
                 when (event) {
                     is TimelineEvent.WeightEvent -> {
-                        canvas.drawText("[$timeStr] Weight: ${event.entry.weight} ${event.entry.unit}", margin + 10f, yPosition, paint)
+                        val formattedWeight = UnitFormatter.formatWeight(event.entry.weight, weightUnit)
+                        canvas.drawText("[$timeStr] Weight: $formattedWeight", margin + 10f, yPosition, paint)
                         yPosition += 15f
                         if (event.entry.notes.isNotBlank()) {
                             canvas.drawText("  Notes: ${event.entry.notes}", margin + 20f, yPosition, paint)
@@ -205,7 +209,8 @@ object PdfGenerator {
                         }
                     }
                     is TimelineEvent.WaterEvent -> {
-                        canvas.drawText("[$timeStr] Water: ${event.log.amount} ${event.log.unit}", margin + 10f, yPosition, paint)
+                        val formattedWater = UnitFormatter.formatWater(event.log.amount, waterUnit)
+                        canvas.drawText("[$timeStr] Water: $formattedWater", margin + 10f, yPosition, paint)
                         yPosition += 15f
                     }
                 }

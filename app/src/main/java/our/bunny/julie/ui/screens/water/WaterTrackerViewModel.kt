@@ -6,42 +6,53 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import our.bunny.julie.domain.model.WaterLog
+import our.bunny.julie.domain.repository.SettingsRepository
 import our.bunny.julie.domain.repository.TrackerRepository
+import our.bunny.julie.util.UnitFormatter
+import our.bunny.julie.util.WaterUnit
 import java.time.LocalDateTime
 import javax.inject.Inject
 
 data class WaterTrackerUiState(
     val entries: List<WaterLog> = emptyList(),
-    val isLoading: Boolean = false
+    val isLoading: Boolean = false,
+    val waterUnit: WaterUnit = WaterUnit.ML
 )
 
 @HiltViewModel
 class WaterTrackerViewModel @Inject constructor(
     private val savedStateHandle: SavedStateHandle,
-    private val trackerRepository: TrackerRepository
+    private val trackerRepository: TrackerRepository,
+    private val settingsRepository: SettingsRepository
 ) : ViewModel() {
 
     val petId: Long = savedStateHandle.get<Long>("petId") ?: -1L
 
-    val uiState: StateFlow<WaterTrackerUiState> = trackerRepository
-        .getWaterLogsForPet(petId)
-        .map { WaterTrackerUiState(entries = it, isLoading = false) }
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
-            initialValue = WaterTrackerUiState(isLoading = true)
+    val uiState: StateFlow<WaterTrackerUiState> = combine(
+        trackerRepository.getWaterLogsForPet(petId),
+        settingsRepository.waterUnitFlow
+    ) { entries, unit ->
+        WaterTrackerUiState(
+            entries = entries,
+            isLoading = false,
+            waterUnit = unit
         )
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = WaterTrackerUiState(isLoading = true)
+    )
 
-    fun addWaterEntry(amount: Float, unit: String) {
+    fun addWaterEntry(amount: Float, unit: WaterUnit) {
         viewModelScope.launch {
+            val canonicalAmount = UnitFormatter.parseWaterToCanonical(amount, unit)
             val entry = WaterLog(
                 petId = petId,
-                amount = amount,
-                unit = unit,
+                amount = canonicalAmount,
                 time = LocalDateTime.now()
             )
             trackerRepository.insertWaterLog(entry)

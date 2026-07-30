@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
 import our.bunny.julie.domain.repository.ExportRepository
+import our.bunny.julie.domain.repository.SettingsRepository
 import our.bunny.julie.util.PdfGenerator
 import java.io.File
 import javax.inject.Inject
@@ -23,7 +24,8 @@ sealed class ExportState {
 
 @HiltViewModel
 class ExportViewModel @Inject constructor(
-    private val exportRepository: ExportRepository
+    private val exportRepository: ExportRepository,
+    private val settingsRepository: SettingsRepository
 ) : ViewModel() {
 
     private val _exportState = MutableStateFlow<ExportState>(ExportState.Idle)
@@ -34,8 +36,10 @@ class ExportViewModel @Inject constructor(
             _exportState.value = ExportState.Generating
             try {
                 val report = exportRepository.getPetHealthReport(petId).firstOrNull()
+                val weightUnit = settingsRepository.weightUnitFlow.firstOrNull() ?: our.bunny.julie.util.WeightUnit.KG
+                val waterUnit = settingsRepository.waterUnitFlow.firstOrNull() ?: our.bunny.julie.util.WaterUnit.ML
                 if (report != null) {
-                    val file = PdfGenerator.generateReport(context, report)
+                    val file = PdfGenerator.generateReport(context, report, weightUnit, waterUnit)
                     _exportState.value = ExportState.Success(file)
                 } else {
                     _exportState.value = ExportState.Error("Pet data not found.")

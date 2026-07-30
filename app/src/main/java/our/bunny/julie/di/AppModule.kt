@@ -26,6 +26,7 @@ object AppModule {
             PetDatabase::class.java,
             PetDatabase.DATABASE_NAME
         )
+        .addMigrations(PetDatabase.MIGRATION_4_5)
         .fallbackToDestructiveMigration()
         .build()
     }

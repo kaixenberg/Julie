@@ -24,7 +24,6 @@ data class WeightEntryEntity(
     val petId: Long,
     val date: LocalDateTime,
     val weight: Float,
-    val unit: String,
     val notes: String
 ) {
     fun toDomainModel(): WeightEntry {
@@ -33,7 +32,6 @@ data class WeightEntryEntity(
             petId = petId,
             date = date,
             weight = weight,
-            unit = unit,
             notes = notes
         )
     }
@@ -45,7 +43,6 @@ data class WeightEntryEntity(
                 petId = model.petId,
                 date = model.date,
                 weight = model.weight,
-                unit = model.unit,
                 notes = model.notes
             )
         }

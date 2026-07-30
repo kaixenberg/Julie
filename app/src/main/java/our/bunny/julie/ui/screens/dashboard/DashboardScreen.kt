@@ -16,7 +16,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import our.bunny.julie.domain.model.Pet
 import our.bunny.julie.ui.screens.home.PetAvatar
+import our.bunny.julie.util.UnitFormatter
+import our.bunny.julie.util.WaterUnit
+import our.bunny.julie.util.WeightUnit
 
 @Composable
 fun DashboardScreen(
@@ -91,6 +95,8 @@ fun DashboardScreen(
             items(uiState.petsData, key = { it.pet.id }) { petData ->
                 PetSummarySection(
                     petData = petData,
+                    weightUnit = uiState.weightUnit,
+                    waterUnit = uiState.waterUnit,
                     onNavigateToPetDetail = onNavigateToPetDetail,
                     onNavigateToPetStatDetail = onNavigateToPetStatDetail
                 )
@@ -106,6 +112,8 @@ fun DashboardScreen(
 @Composable
 fun PetSummarySection(
     petData: PetDashboardData,
+    weightUnit: WeightUnit,
+    waterUnit: WaterUnit,
     onNavigateToPetDetail: (Long) -> Unit,
     onNavigateToPetStatDetail: (Long, our.bunny.julie.ui.navigation.StatType) -> Unit
 ) {
@@ -143,14 +151,14 @@ fun PetSummarySection(
         ) {
             ExpressiveStatCard(
                 title = "Weight",
-                value = petData.latestWeight?.let { "${it.weight} ${it.unit}" } ?: "--",
+                value = petData.latestWeight?.let { UnitFormatter.formatWeight(it.weight, weightUnit) } ?: "--",
                 subtitle = "Latest",
                 modifier = Modifier.weight(1f),
                 onClick = { onNavigateToPetStatDetail(petData.pet.id, our.bunny.julie.ui.navigation.StatType.Weight) }
             )
             ExpressiveStatCard(
                 title = "Water",
-                value = "${petData.todayWater} ml",
+                value = if (petData.todayWater > 0f) UnitFormatter.formatWater(petData.todayWater, waterUnit) else "--",
                 subtitle = "Today",
                 modifier = Modifier.weight(1f),
                 onClick = { onNavigateToPetStatDetail(petData.pet.id, our.bunny.julie.ui.navigation.StatType.Water) }

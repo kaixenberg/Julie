@@ -22,6 +22,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import our.bunny.julie.domain.model.TimelineEvent
+import our.bunny.julie.util.UnitFormatter
+import our.bunny.julie.util.WaterUnit
+import our.bunny.julie.util.WeightUnit
 import java.time.format.DateTimeFormatter
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -70,7 +73,11 @@ fun TimelineScreen(
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 items(uiState.events) { event ->
-                    TimelineEventItem(event)
+                    TimelineEventCard(
+                        event = event,
+                        weightUnit = uiState.weightUnit,
+                        waterUnit = uiState.waterUnit
+                    )
                 }
             }
         }
@@ -78,7 +85,7 @@ fun TimelineScreen(
 }
 
 @Composable
-fun TimelineEventItem(event: TimelineEvent) {
+fun TimelineEventCard(event: TimelineEvent, weightUnit: WeightUnit, waterUnit: WaterUnit) {
     val formatter = DateTimeFormatter.ofPattern("MMM dd, yyyy HH:mm")
 
     Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
@@ -105,9 +112,9 @@ fun TimelineEventItem(event: TimelineEvent) {
         // Content
         Column(modifier = Modifier.weight(1f)) {
             val title = when (event) {
-                is TimelineEvent.WeightEvent -> "Weight Logged: ${event.entry.weight} ${event.entry.unit}"
+                is TimelineEvent.WeightEvent -> "Weight Logged: ${UnitFormatter.formatWeight(event.entry.weight, weightUnit)}"
                 is TimelineEvent.FeedingEvent -> "Meal Logged: ${event.log.food}"
-                is TimelineEvent.WaterEvent -> "Water Logged: ${event.log.amount} ${event.log.unit}"
+                is TimelineEvent.WaterEvent -> "Water Logged: ${UnitFormatter.formatWater(event.log.amount, waterUnit)}"
             }
 
             val subtitle = when (event) {
