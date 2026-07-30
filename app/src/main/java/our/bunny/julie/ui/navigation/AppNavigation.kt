@@ -24,6 +24,9 @@ sealed class Screen(val route: String) {
     object PetStatDetail : Screen("pet_stat_detail/{petId}/{statType}") {
         fun createRoute(petId: String, statType: StatType) = "pet_stat_detail/$petId/${statType.name}"
     }
+    object AddEditPet : Screen("add_edit_pet/{petId}") {
+        fun createRoute(petId: Long = -1L) = "add_edit_pet/$petId"
+    }
 }
 
 @Composable
@@ -38,7 +41,22 @@ fun AppNavigation(navController: NavHostController, onOpenDrawer: () -> Unit) {
     ) {
         composable(Screen.Dashboard.route) {
             JulieAppScaffold(title = "Dashboard", onOpenDrawer = onOpenDrawer) { innerPadding ->
-                PlaceholderScreen("Dashboard (Home)", innerPadding)
+                our.bunny.julie.ui.screens.dashboard.DashboardScreen(
+                    paddingValues = innerPadding,
+                    onNavigateToAddPet = {
+                        navController.navigate(Screen.AddEditPet.createRoute())
+                    }
+                )
+            }
+        }
+        composable(
+            route = Screen.AddEditPet.route,
+            arguments = listOf(navArgument("petId") { type = NavType.LongType; defaultValue = -1L })
+        ) {
+            JulieAppScaffold(title = "Add/Edit Pet", onOpenDrawer = onOpenDrawer) { innerPadding ->
+                our.bunny.julie.ui.screens.pet.AddEditPetScreen(
+                    onNavigateUp = { navController.navigateUp() }
+                )
             }
         }
         composable(Screen.Settings.route) {
