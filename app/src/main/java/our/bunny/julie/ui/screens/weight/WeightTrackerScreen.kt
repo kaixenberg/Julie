@@ -5,14 +5,12 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.foundation.Canvas
@@ -23,6 +21,9 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import our.bunny.julie.domain.model.WeightEntry
 import our.bunny.julie.util.UnitFormatter
 import our.bunny.julie.util.WeightUnit
+import our.bunny.julie.ui.components.SelectableEntryCard
+import our.bunny.julie.ui.components.TrackerListScaffold
+import java.time.format.DateTimeFormatter
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -33,21 +34,50 @@ fun WeightTrackerScreen(
     val uiState by viewModel.uiState.collectAsState()
     var showAddDialog by remember { mutableStateOf(false) }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Weight Tracker") },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateUp) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    titleContentColor = MaterialTheme.colorScheme.onPrimary,
-                    navigationIconContentColor = MaterialTheme.colorScheme.onPrimary
-                )
-            )
+    val searchQuery by viewModel.searchQuery.collectAsState()
+    val currentSort by viewModel.currentSort.collectAsState()
+    val currentFilter by viewModel.currentFilter.collectAsState()
+    val selectedIds by viewModel.selectedIds.collectAsState()
+    var isSearchActive by remember { mutableStateOf(false) }
+    var editingEntry by remember { mutableStateOf<WeightEntry?>(null) }
+
+    TrackerListScaffold(
+        title = "Weight Tracker",
+        onNavigateUp = onNavigateUp,
+        isSelectionMode = selectedIds.isNotEmpty(),
+        selectedCount = selectedIds.size,
+        onClearSelection = { viewModel.clearSelection() },
+        onSelectAll = { viewModel.selectAll(uiState.entries.map { it.id }) },
+        onDeleteSelected = {
+            viewModel.deleteSelected(uiState.entries)
+        },
+        showSearchOption = true,
+        onSearchClick = { isSearchActive = true },
+        onSortClick = {
+            val nextSort = when (currentSort) {
+                WeightSort.DATE_NEWEST -> WeightSort.DATE_OLDEST
+                WeightSort.DATE_OLDEST -> WeightSort.WEIGHT_HIGH
+                WeightSort.WEIGHT_HIGH -> WeightSort.WEIGHT_LOW
+                WeightSort.WEIGHT_LOW -> WeightSort.DATE_NEWEST
+            }
+            viewModel.currentSort.value = nextSort
+        },
+        onFilterClick = {
+            val nextFilter = when (currentFilter) {
+                WeightFilter.ALL_TIME -> WeightFilter.LAST_7_DAYS
+                WeightFilter.LAST_7_DAYS -> WeightFilter.LAST_30_DAYS
+                WeightFilter.LAST_30_DAYS -> WeightFilter.LAST_6_MONTHS
+                WeightFilter.LAST_6_MONTHS -> WeightFilter.LAST_YEAR
+                WeightFilter.LAST_YEAR -> WeightFilter.ALL_TIME
+            }
+            viewModel.currentFilter.value = nextFilter
+        },
+        isSearchActive = isSearchActive,
+        searchQuery = searchQuery,
+        onSearchQueryChange = { viewModel.searchQuery.value = it },
+        onSearchClose = {
+            isSearchActive = false
+            viewModel.searchQuery.value = ""
         },
         floatingActionButton = {
             FloatingActionButton(onClick = { showAddDialog = true }) {
@@ -62,12 +92,12 @@ fun WeightTrackerScreen(
             ) {
                 CircularProgressIndicator()
             }
-        } else if (uiState.entries.isEmpty()) {
+        } else if (uiState.entries.isEmpty() && currentFilter == WeightFilter.ALL_TIME && searchQuery.isBlank()) {
             Box(
                 modifier = Modifier.fillMaxSize().padding(paddingValues),
                 contentAlignment = Alignment.Center
             ) {
-                Text("No weight entries yet.")
+                Text("No weight logged yet.")
             }
         } else {
             Column(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
@@ -78,7 +108,7 @@ fun WeightTrackerScreen(
                         modifier = Modifier.padding(16.dp, 16.dp, 16.dp, 0.dp)
                     )
                     WeightChart(
-                        entries = uiState.entries.sortedBy { it.date }, // chronological order for chart
+                        entries = uiState.entries.sortedBy { it.date },
                         weightUnit = uiState.weightUnit,
                         modifier = Modifier
                             .fillMaxWidth()
@@ -93,11 +123,29 @@ fun WeightTrackerScreen(
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     items(uiState.entries) { entry ->
-                        WeightEntryCard(
-                            entry = entry,
-                            weightUnit = uiState.weightUnit,
-                            onDelete = { viewModel.deleteWeightEntry(entry) }
-                        )
+                        val isSelected = selectedIds.contains(entry.id)
+                        SelectableEntryCard(
+                            isSelected = isSelected,
+                            isSelectionMode = selectedIds.isNotEmpty(),
+                            onClick = {
+                                if (selectedIds.isNotEmpty()) {
+                                    viewModel.toggleSelection(entry.id)
+                                } else {
+                                    editingEntry = entry
+                                    showAddDialog = true
+                                }
+                            },
+                            onLongClick = { viewModel.toggleSelection(entry.id) },
+                            onEditClick = {
+                                editingEntry = entry
+                                showAddDialog = true
+                            }
+                        ) {
+                            WeightEntryCardContent(
+                                entry = entry,
+                                weightUnit = uiState.weightUnit
+                            )
+                        }
                     }
                 }
             }
@@ -105,11 +153,17 @@ fun WeightTrackerScreen(
 
         if (showAddDialog) {
             AddWeightDialog(
-                defaultUnit = uiState.weightUnit,
-                onDismiss = { showAddDialog = false },
-                onAdd = { weight, unit, notes ->
-                    viewModel.addWeightEntry(weight, unit, notes)
+                editingEntry = editingEntry,
+                weightUnit = uiState.weightUnit,
+                onDismiss = {
                     showAddDialog = false
+                    editingEntry = null
+                },
+                onAdd = { weight, notes ->
+                    val timeToUse = editingEntry?.date ?: java.time.LocalDateTime.now()
+                    viewModel.addOrUpdateWeightEntry(editingEntry?.id ?: 0L, weight, uiState.weightUnit, notes, timeToUse)
+                    showAddDialog = false
+                    editingEntry = null
                 }
             )
         }
@@ -117,36 +171,37 @@ fun WeightTrackerScreen(
 }
 
 @Composable
-fun WeightEntryCard(entry: WeightEntry, weightUnit: WeightUnit, onDelete: () -> Unit) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+fun WeightEntryCardContent(entry: WeightEntry, weightUnit: WeightUnit) {
+    val formatter = DateTimeFormatter.ofPattern("MMM dd, yyyy HH:mm")
+    val displayWeight = UnitFormatter.formatWeight(entry.weight, weightUnit)
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(end = 8.dp),
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        Row(
-            modifier = Modifier.padding(16.dp).fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Column {
+        Column(modifier = Modifier.weight(1f)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
                 Text(
-                    text = UnitFormatter.formatWeight(entry.weight, weightUnit),
+                    text = displayWeight,
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold
                 )
                 Text(
-                    text = entry.date.toLocalDate().toString(),
-                    style = MaterialTheme.typography.bodySmall
+                    text = entry.date.format(formatter),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
-                if (entry.notes.isNotBlank()) {
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text = entry.notes,
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-                }
             }
-            IconButton(onClick = onDelete) {
-                Icon(Icons.Default.Delete, contentDescription = "Delete", tint = MaterialTheme.colorScheme.error)
+            if (entry.notes.isNotBlank()) {
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = entry.notes,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
         }
     }
@@ -154,45 +209,35 @@ fun WeightEntryCard(entry: WeightEntry, weightUnit: WeightUnit, onDelete: () -> 
 
 @Composable
 fun AddWeightDialog(
-    defaultUnit: WeightUnit,
+    editingEntry: WeightEntry? = null,
+    weightUnit: WeightUnit,
     onDismiss: () -> Unit,
-    onAdd: (weight: Float, unit: WeightUnit, notes: String) -> Unit
+    onAdd: (weight: Float, notes: String) -> Unit
 ) {
-    var weightText by remember { mutableStateOf("") }
-    var unit by remember { mutableStateOf(defaultUnit) } // default
-    var notes by remember { mutableStateOf("") }
+    val initialAmountText = if (editingEntry != null) {
+        UnitFormatter.getWeightInDisplayUnit(editingEntry.weight, weightUnit).toString()
+    } else {
+        ""
+    }
+    var weightText by remember { mutableStateOf(initialAmountText) }
+    var notesText by remember { mutableStateOf(editingEntry?.notes ?: "") }
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Add Weight") },
+        title = { Text(if (editingEntry != null) "Edit Weight" else "Add Weight") },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedTextField(
                     value = weightText,
                     onValueChange = { weightText = it },
-                    label = { Text("Weight") },
+                    label = { Text("Weight (${if (weightUnit == WeightUnit.KG) "kg" else "lbs"})") },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                     modifier = Modifier.fillMaxWidth()
                 )
                 
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(16.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text("Unit:")
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        RadioButton(selected = unit == WeightUnit.KG, onClick = { unit = WeightUnit.KG })
-                        Text("kg")
-                    }
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        RadioButton(selected = unit == WeightUnit.LBS, onClick = { unit = WeightUnit.LBS })
-                        Text("lbs")
-                    }
-                }
-
                 OutlinedTextField(
-                    value = notes,
-                    onValueChange = { notes = it },
+                    value = notesText,
+                    onValueChange = { notesText = it },
                     label = { Text("Notes (optional)") },
                     modifier = Modifier.fillMaxWidth()
                 )
@@ -203,11 +248,11 @@ fun AddWeightDialog(
                 onClick = {
                     val w = weightText.toFloatOrNull()
                     if (w != null) {
-                        onAdd(w, unit, notes)
+                        onAdd(w, notesText)
                     }
                 }
             ) {
-                Text("Add")
+                Text(if (editingEntry != null) "Save" else "Add")
             }
         },
         dismissButton = {

@@ -4,10 +4,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -21,6 +19,8 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import our.bunny.julie.domain.model.WaterLog
 import our.bunny.julie.util.UnitFormatter
 import our.bunny.julie.util.WaterUnit
+import our.bunny.julie.ui.components.SelectableEntryCard
+import our.bunny.julie.ui.components.TrackerListScaffold
 import java.time.format.DateTimeFormatter
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -32,25 +32,47 @@ fun WaterTrackerScreen(
     val uiState by viewModel.uiState.collectAsState()
     var showAddDialog by remember { mutableStateOf(false) }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Water Tracker") },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateUp) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    titleContentColor = MaterialTheme.colorScheme.onPrimary,
-                    navigationIconContentColor = MaterialTheme.colorScheme.onPrimary
-                )
-            )
+    val currentSort by viewModel.currentSort.collectAsState()
+    val currentFilter by viewModel.currentFilter.collectAsState()
+    val selectedIds by viewModel.selectedIds.collectAsState()
+    var editingEntry by remember { mutableStateOf<WaterLog?>(null) }
+
+    TrackerListScaffold(
+        title = "Water Tracker",
+        onNavigateUp = onNavigateUp,
+        isSelectionMode = selectedIds.isNotEmpty(),
+        selectedCount = selectedIds.size,
+        onClearSelection = { viewModel.clearSelection() },
+        onSelectAll = { viewModel.selectAll(uiState.entries.map { it.id }) },
+        onDeleteSelected = {
+            viewModel.deleteSelected(uiState.entries)
         },
+        showSearchOption = false,
+        onSearchClick = { }, // No-op
+        onSortClick = {
+            val nextSort = when (currentSort) {
+                WaterSort.DATE_NEWEST -> WaterSort.DATE_OLDEST
+                WaterSort.DATE_OLDEST -> WaterSort.AMOUNT_HIGH
+                WaterSort.AMOUNT_HIGH -> WaterSort.AMOUNT_LOW
+                WaterSort.AMOUNT_LOW -> WaterSort.DATE_NEWEST
+            }
+            viewModel.currentSort.value = nextSort
+        },
+        onFilterClick = {
+            val nextFilter = when (currentFilter) {
+                WaterFilter.ALL_TIME -> WaterFilter.LAST_7_DAYS
+                WaterFilter.LAST_7_DAYS -> WaterFilter.LAST_30_DAYS
+                WaterFilter.LAST_30_DAYS -> WaterFilter.ALL_TIME
+            }
+            viewModel.currentFilter.value = nextFilter
+        },
+        isSearchActive = false,
+        searchQuery = "",
+        onSearchQueryChange = { },
+        onSearchClose = { },
         floatingActionButton = {
             FloatingActionButton(onClick = { showAddDialog = true }) {
-                Icon(Icons.Default.Add, contentDescription = "Add Water")
+                Icon(androidx.compose.material.icons.Icons.Default.Add, contentDescription = "Add Water")
             }
         }
     ) { paddingValues ->
@@ -61,7 +83,7 @@ fun WaterTrackerScreen(
             ) {
                 CircularProgressIndicator()
             }
-        } else if (uiState.entries.isEmpty()) {
+        } else if (uiState.entries.isEmpty() && currentFilter == WaterFilter.ALL_TIME) {
             Box(
                 modifier = Modifier.fillMaxSize().padding(paddingValues),
                 contentAlignment = Alignment.Center
@@ -92,11 +114,29 @@ fun WaterTrackerScreen(
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     items(uiState.entries) { entry ->
-                        WaterEntryCard(
-                            entry = entry,
-                            waterUnit = uiState.waterUnit,
-                            onDelete = { viewModel.deleteWaterEntry(entry) }
-                        )
+                        val isSelected = selectedIds.contains(entry.id)
+                        SelectableEntryCard(
+                            isSelected = isSelected,
+                            isSelectionMode = selectedIds.isNotEmpty(),
+                            onClick = {
+                                if (selectedIds.isNotEmpty()) {
+                                    viewModel.toggleSelection(entry.id)
+                                } else {
+                                    editingEntry = entry
+                                    showAddDialog = true
+                                }
+                            },
+                            onLongClick = { viewModel.toggleSelection(entry.id) },
+                            onEditClick = {
+                                editingEntry = entry
+                                showAddDialog = true
+                            }
+                        ) {
+                            WaterEntryCardContent(
+                                entry = entry,
+                                waterUnit = uiState.waterUnit
+                            )
+                        }
                     }
                 }
             }
@@ -104,11 +144,17 @@ fun WaterTrackerScreen(
 
         if (showAddDialog) {
             AddWaterDialog(
-                defaultUnit = uiState.waterUnit,
-                onDismiss = { showAddDialog = false },
-                onAdd = { amount, unit ->
-                    viewModel.addWaterEntry(amount, unit)
+                editingEntry = editingEntry,
+                waterUnit = uiState.waterUnit,
+                onDismiss = {
                     showAddDialog = false
+                    editingEntry = null
+                },
+                onAdd = { amount ->
+                    val timeToUse = editingEntry?.time ?: java.time.LocalDateTime.now()
+                    viewModel.addOrUpdateWaterEntry(editingEntry?.id ?: 0L, amount, uiState.waterUnit, timeToUse)
+                    showAddDialog = false
+                    editingEntry = null
                 }
             )
         }
@@ -116,71 +162,54 @@ fun WaterTrackerScreen(
 }
 
 @Composable
-fun WaterEntryCard(entry: WaterLog, waterUnit: WaterUnit, onDelete: () -> Unit) {
+fun WaterEntryCardContent(entry: WaterLog, waterUnit: WaterUnit) {
     val formatter = DateTimeFormatter.ofPattern("MMM dd, yyyy HH:mm")
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    val displayAmount = UnitFormatter.formatWater(entry.amount, waterUnit)
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(end = 8.dp),
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        Row(
-            modifier = Modifier.padding(16.dp).fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Column {
-                Text(
-                    text = UnitFormatter.formatWater(entry.amount, waterUnit),
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
-                )
-                Text(
-                    text = entry.time.format(formatter),
-                    style = MaterialTheme.typography.bodySmall
-                )
-            }
-            IconButton(onClick = onDelete) {
-                Icon(Icons.Default.Delete, contentDescription = "Delete", tint = MaterialTheme.colorScheme.error)
-            }
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = displayAmount,
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold
+            )
+            Text(
+                text = entry.time.format(formatter),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
         }
     }
 }
 
 @Composable
 fun AddWaterDialog(
-    defaultUnit: WaterUnit,
+    editingEntry: WaterLog? = null,
+    waterUnit: WaterUnit,
     onDismiss: () -> Unit,
-    onAdd: (amount: Float, unit: WaterUnit) -> Unit
+    onAdd: (amount: Float) -> Unit
 ) {
-    var amountText by remember { mutableStateOf("") }
-    var unit by remember { mutableStateOf(defaultUnit) }
+    val initialAmountText = if (editingEntry != null) {
+        UnitFormatter.getWaterInDisplayUnit(editingEntry.amount, waterUnit).toString()
+    } else {
+        ""
+    }
+    var amountText by remember { mutableStateOf(initialAmountText) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Log Water") },
+        title = { Text(if (editingEntry != null) "Edit Water" else "Add Water") },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedTextField(
                     value = amountText,
                     onValueChange = { amountText = it },
-                    label = { Text("Amount") },
+                    label = { Text("Amount (${if (waterUnit == WaterUnit.ML) "ml" else "oz"})") },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                     modifier = Modifier.fillMaxWidth()
                 )
-                
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(16.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text("Unit:")
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        RadioButton(selected = unit == WaterUnit.ML, onClick = { unit = WaterUnit.ML })
-                        Text("ml")
-                    }
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        RadioButton(selected = unit == WaterUnit.OZ, onClick = { unit = WaterUnit.OZ })
-                        Text("oz")
-                    }
-                }
             }
         },
         confirmButton = {
@@ -188,11 +217,11 @@ fun AddWaterDialog(
                 onClick = {
                     val amt = amountText.toFloatOrNull()
                     if (amt != null) {
-                        onAdd(amt, unit)
+                        onAdd(amt)
                     }
                 }
             ) {
-                Text("Add")
+                Text(if (editingEntry != null) "Save" else "Add")
             }
         },
         dismissButton = {

@@ -5,15 +5,20 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import our.bunny.julie.domain.model.Medication
 import our.bunny.julie.domain.repository.TrackerRepository
 import our.bunny.julie.util.ReminderManager
 import javax.inject.Inject
+
+enum class MedicationSort { NAME, STATUS }
+enum class MedicationFilter { ALL, ACTIVE, PAUSED }
 
 data class MedicationListUiState(
     val medications: List<Medication> = emptyList(),
@@ -29,18 +34,77 @@ class MedicationListViewModel @Inject constructor(
 
     val petId: Long = savedStateHandle.get<Long>("petId") ?: -1L
 
-    val uiState: StateFlow<MedicationListUiState> = trackerRepository
-        .getMedicationsForPet(petId)
-        .map { MedicationListUiState(medications = it, isLoading = false) }
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
-            initialValue = MedicationListUiState(isLoading = true)
-        )
+    val searchQuery = MutableStateFlow("")
+    val currentSort = MutableStateFlow(MedicationSort.NAME)
+    val currentFilter = MutableStateFlow(MedicationFilter.ALL)
+    val selectedIds = MutableStateFlow<Set<Long>>(emptySet())
 
-    fun addMedication(name: String, dosage: String, schedules: List<our.bunny.julie.domain.model.MedicationSchedule>, notes: String) {
+    val uiState: StateFlow<MedicationListUiState> = combine(
+        trackerRepository.getMedicationsForPet(petId),
+        searchQuery,
+        currentSort,
+        currentFilter
+    ) { medications, query, sort, filter ->
+        var filtered = medications
+
+        // Filter
+        filtered = when (filter) {
+            MedicationFilter.ALL -> filtered
+            MedicationFilter.ACTIVE -> filtered.filter { it.isActive }
+            MedicationFilter.PAUSED -> filtered.filter { !it.isActive }
+        }
+
+        // Search
+        if (query.isNotBlank()) {
+            filtered = filtered.filter {
+                it.name.contains(query, ignoreCase = true) || it.notes.contains(query, ignoreCase = true)
+            }
+        }
+
+        // Sort
+        filtered = when (sort) {
+            MedicationSort.NAME -> filtered.sortedBy { it.name.lowercase() }
+            MedicationSort.STATUS -> filtered.sortedByDescending { it.isActive } // Active first
+        }
+
+        MedicationListUiState(medications = filtered, isLoading = false)
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = MedicationListUiState(isLoading = true)
+    )
+
+    fun toggleSelection(medicationId: Long) {
+        selectedIds.update {
+            if (it.contains(medicationId)) it - medicationId else it + medicationId
+        }
+    }
+
+    fun selectAll(medicationIds: List<Long>) {
+        selectedIds.update { current ->
+            if (current.size == medicationIds.size) emptySet() else medicationIds.toSet()
+        }
+    }
+
+    fun clearSelection() {
+        selectedIds.value = emptySet()
+    }
+
+    fun deleteSelected(medications: List<Medication>) {
+        viewModelScope.launch {
+            val toDelete = medications.filter { selectedIds.value.contains(it.id) }
+            toDelete.forEach { med ->
+                trackerRepository.deleteMedication(med)
+                ReminderManager.cancelMedicationReminder(getApplication(), med.id)
+            }
+            clearSelection()
+        }
+    }
+
+    fun addOrUpdateMedication(id: Long, name: String, dosage: String, schedules: List<our.bunny.julie.domain.model.MedicationSchedule>, notes: String) {
         viewModelScope.launch {
             val med = Medication(
+                id = id,
                 petId = petId,
                 name = name,
                 dosage = dosage,
