@@ -10,9 +10,14 @@ import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
 import androidx.navigation.compose.rememberNavController
 import dagger.hilt.android.AndroidEntryPoint
-import our.bunny.julie.ui.navigation.NavGraph
 import our.bunny.julie.ui.theme.JulieTheme
 import our.bunny.julie.ui.theme.PaletteStyle
+import kotlinx.coroutines.launch
+import our.bunny.julie.ui.screens.home.HomeViewModel
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+
 
 // ─── Debug flag ───────────────────────────────────────────────────────────────
 // Set to true to launch ThemePreviewScreen instead of the normal app.
@@ -40,7 +45,24 @@ class MainActivity : ComponentActivity() {
                         color = MaterialTheme.colorScheme.background,
                     ) {
                         val navController = rememberNavController()
-                        NavGraph(navController = navController)
+                        val drawerState = androidx.compose.material3.rememberDrawerState(initialValue = androidx.compose.material3.DrawerValue.Closed)
+                        val coroutineScope = androidx.compose.runtime.rememberCoroutineScope()
+                        
+                        val homeViewModel: our.bunny.julie.ui.screens.home.HomeViewModel = hiltViewModel()
+                        val pets by homeViewModel.pets.collectAsState()
+
+                        our.bunny.julie.ui.navigation.JulieAppDrawer(
+                            drawerState = drawerState,
+                            navController = navController,
+                            pets = pets
+                        ) {
+                            our.bunny.julie.ui.navigation.AppNavigation(
+                                navController = navController,
+                                onOpenDrawer = {
+                                    coroutineScope.launch { drawerState.open() }
+                                }
+                            )
+                        }
                     }
                 }
             }
