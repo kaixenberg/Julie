@@ -38,16 +38,15 @@ class MedicationListViewModel @Inject constructor(
             initialValue = MedicationListUiState(isLoading = true)
         )
 
-    fun addMedication(name: String, dosage: String, frequency: String, timeOfDay: String, notes: String) {
+    fun addMedication(name: String, dosage: String, schedules: List<our.bunny.julie.domain.model.MedicationSchedule>, notes: String) {
         viewModelScope.launch {
             val med = Medication(
                 petId = petId,
                 name = name,
                 dosage = dosage,
-                frequency = frequency,
-                timeOfDay = timeOfDay,
                 isActive = true,
-                notes = notes
+                notes = notes,
+                schedules = schedules
             )
             val medId = trackerRepository.insertMedication(med)
             ReminderManager.scheduleMedicationReminder(getApplication(), med.copy(id = medId))

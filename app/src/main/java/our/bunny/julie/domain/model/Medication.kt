@@ -5,8 +5,7 @@ data class Medication(
     val petId: Long,
     val name: String,
     val dosage: String,
-    val frequency: String,
-    val timeOfDay: String, // e.g. "08:00"
     val isActive: Boolean,
-    val notes: String
+    val notes: String,
+    val schedules: List<MedicationSchedule>
 )

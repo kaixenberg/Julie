@@ -12,6 +12,7 @@ import our.bunny.julie.domain.model.TimelineEvent
 import our.bunny.julie.util.UnitFormatter
 import our.bunny.julie.util.WaterUnit
 import our.bunny.julie.util.WeightUnit
+import our.bunny.julie.util.MedicationScheduleFormatter
 import java.io.File
 import java.io.FileOutputStream
 import java.time.format.DateTimeFormatter
@@ -67,8 +68,9 @@ object PdfGenerator {
                     canvas = page.canvas
                     yPosition = 50f
                 }
-                val status = if (med.isActive) "Active" else "Paused"
-                canvas.drawText("• ${med.name} - ${med.dosage} (${med.frequency} at ${med.timeOfDay}) [$status]", margin + 10f, yPosition, paint)
+                val status = if (med.isActive) "Active" else "Inactive"
+                val schedStr = MedicationScheduleFormatter.format(med.schedules)
+                canvas.drawText("• ${med.name} - ${med.dosage} ($schedStr) [$status]", margin + 10f, yPosition, paint)
                 yPosition += 20f
                 if (med.notes.isNotBlank()) {
                     canvas.drawText("  Notes: ${med.notes}", margin + 20f, yPosition, paint)

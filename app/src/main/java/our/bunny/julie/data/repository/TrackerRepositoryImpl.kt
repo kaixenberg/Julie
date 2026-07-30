@@ -11,7 +11,9 @@ import our.bunny.julie.domain.model.FeedingLog
 import our.bunny.julie.domain.model.WaterLog
 import our.bunny.julie.domain.model.WeightEntry
 import our.bunny.julie.domain.model.Medication
+import our.bunny.julie.data.local.entity.MedicationScheduleEntity
 import our.bunny.julie.domain.repository.TrackerRepository
+import androidx.room.withTransaction
 
 class TrackerRepositoryImpl(
     private val dao: TrackerDao
@@ -78,7 +80,17 @@ class TrackerRepositoryImpl(
     }
 
     override suspend fun insertMedication(medication: Medication): Long {
-        return dao.insertMedication(MedicationEntity.fromDomainModel(medication))
+        val medicationId = if (medication.id == 0L) {
+            dao.insertMedication(MedicationEntity.fromDomainModel(medication))
+        } else {
+            dao.insertMedication(MedicationEntity.fromDomainModel(medication))
+            medication.id
+        }
+        dao.deleteMedicationSchedules(medicationId)
+        if (medication.schedules.isNotEmpty()) {
+            dao.insertMedicationSchedules(medication.schedules.map { MedicationScheduleEntity.fromDomainModel(medicationId, it) })
+        }
+        return medicationId
     }
 
     override suspend fun deleteMedication(medication: Medication) {

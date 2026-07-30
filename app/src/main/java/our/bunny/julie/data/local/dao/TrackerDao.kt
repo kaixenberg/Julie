@@ -10,6 +10,9 @@ import our.bunny.julie.data.local.entity.FeedingLogEntity
 import our.bunny.julie.data.local.entity.WaterLogEntity
 import our.bunny.julie.data.local.entity.WeightEntryEntity
 import our.bunny.julie.data.local.entity.MedicationEntity
+import our.bunny.julie.data.local.entity.MedicationScheduleEntity
+import our.bunny.julie.data.local.entity.MedicationWithSchedules
+import androidx.room.Transaction
 
 @Dao
 interface TrackerDao {
@@ -52,8 +55,15 @@ interface TrackerDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertMedication(medication: MedicationEntity): Long
 
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertMedicationSchedules(schedules: List<MedicationScheduleEntity>)
+
+    @Query("DELETE FROM medication_schedules WHERE medicationId = :medicationId")
+    suspend fun deleteMedicationSchedules(medicationId: Long)
+
+    @Transaction
     @Query("SELECT * FROM medications WHERE petId = :petId")
-    fun getMedicationsForPet(petId: Long): Flow<List<MedicationEntity>>
+    fun getMedicationsForPet(petId: Long): Flow<List<MedicationWithSchedules>>
 
     @Delete
     suspend fun deleteMedication(medication: MedicationEntity)

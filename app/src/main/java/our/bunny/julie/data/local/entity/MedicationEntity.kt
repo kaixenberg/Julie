@@ -23,24 +23,9 @@ data class MedicationEntity(
     val petId: Long,
     val name: String,
     val dosage: String,
-    val frequency: String,
-    val timeOfDay: String,
     val isActive: Boolean,
     val notes: String
 ) {
-    fun toDomainModel(): Medication {
-        return Medication(
-            id = id,
-            petId = petId,
-            name = name,
-            dosage = dosage,
-            frequency = frequency,
-            timeOfDay = timeOfDay,
-            isActive = isActive,
-            notes = notes
-        )
-    }
-
     companion object {
         fun fromDomainModel(model: Medication): MedicationEntity {
             return MedicationEntity(
@@ -48,8 +33,6 @@ data class MedicationEntity(
                 petId = model.petId,
                 name = model.name,
                 dosage = model.dosage,
-                frequency = model.frequency,
-                timeOfDay = model.timeOfDay,
                 isActive = model.isActive,
                 notes = model.notes
             )

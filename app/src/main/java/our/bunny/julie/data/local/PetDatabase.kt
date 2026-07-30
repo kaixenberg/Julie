@@ -10,6 +10,7 @@ import our.bunny.julie.data.local.entity.PetEntity
 import our.bunny.julie.data.local.entity.WaterLogEntity
 import our.bunny.julie.data.local.entity.WeightEntryEntity
 import our.bunny.julie.data.local.entity.MedicationEntity
+import our.bunny.julie.data.local.entity.MedicationScheduleEntity
 
 @Database(
     entities = [
@@ -17,9 +18,10 @@ import our.bunny.julie.data.local.entity.MedicationEntity
         WeightEntryEntity::class,
         FeedingLogEntity::class,
         WaterLogEntity::class,
-        MedicationEntity::class
+        MedicationEntity::class,
+        MedicationScheduleEntity::class
     ],
-    version = 5,
+    version = 6,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
@@ -76,6 +78,53 @@ abstract class PetDatabase : RoomDatabase() {
                 database.execSQL("DROP TABLE `water_logs`")
                 database.execSQL("ALTER TABLE `water_logs_new` RENAME TO `water_logs`")
                 database.execSQL("CREATE INDEX IF NOT EXISTS `index_water_logs_petId` ON `water_logs` (`petId`)")
+            }
+        }
+
+        val MIGRATION_5_6 = object : androidx.room.migration.Migration(5, 6) {
+            override fun migrate(database: androidx.sqlite.db.SupportSQLiteDatabase) {
+                // 1. Create medication_schedules table
+                database.execSQL("""
+                    CREATE TABLE IF NOT EXISTS `medication_schedules` (
+                        `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, 
+                        `medicationId` INTEGER NOT NULL, 
+                        `timeOfDay` TEXT NOT NULL, 
+                        `daysOfWeek` TEXT NOT NULL, 
+                        FOREIGN KEY(`medicationId`) REFERENCES `medications`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE
+                    )
+                """)
+                database.execSQL("CREATE INDEX IF NOT EXISTS `index_medication_schedules_medicationId` ON `medication_schedules` (`medicationId`)")
+
+                // 2. Migrate existing schedules: all existing rows become "every day"
+                // Best-effort mapping: "Twice a day" only had one time stored. Users must manually add the second dose.
+                android.util.Log.w("PetDatabase", "Migration 5 to 6: 'Twice a day' medications were migrated using their single stored time. Users may need to manually add the second schedule time.")
+
+                database.execSQL("""
+                    INSERT INTO `medication_schedules` (`medicationId`, `timeOfDay`, `daysOfWeek`)
+                    SELECT `id`, `timeOfDay`, 'MONDAY,TUESDAY,WEDNESDAY,THURSDAY,FRIDAY,SATURDAY,SUNDAY' FROM `medications`
+                """)
+
+                // 3. Rebuild medications table to drop frequency and timeOfDay
+                database.execSQL("""
+                    CREATE TABLE IF NOT EXISTS `medications_new` (
+                        `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, 
+                        `petId` INTEGER NOT NULL, 
+                        `name` TEXT NOT NULL, 
+                        `dosage` TEXT NOT NULL, 
+                        `isActive` INTEGER NOT NULL, 
+                        `notes` TEXT NOT NULL, 
+                        FOREIGN KEY(`petId`) REFERENCES `pets`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE
+                    )
+                """)
+                
+                database.execSQL("""
+                    INSERT INTO `medications_new` (`id`, `petId`, `name`, `dosage`, `isActive`, `notes`)
+                    SELECT `id`, `petId`, `name`, `dosage`, `isActive`, `notes` FROM `medications`
+                """)
+                
+                database.execSQL("DROP TABLE `medications`")
+                database.execSQL("ALTER TABLE `medications_new` RENAME TO `medications`")
+                database.execSQL("CREATE INDEX IF NOT EXISTS `index_medications_petId` ON `medications` (`petId`)")
             }
         }
     }
