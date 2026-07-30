@@ -16,4 +16,16 @@ object PetData {
     }
     
     val sexes = listOf("Male", "Female", "Undetermined")
+
+    fun getEmojiForSpecies(species: String): String {
+        return when (species) {
+            "Dog" -> "🐶"
+            "Cat" -> "🐱"
+            "Rabbit", "Bunny" -> "🐰"
+            "Guinea Pig" -> "🐹"
+            "Mouse" -> "🐭"
+            "Bird" -> "🐦"
+            else -> "🐾"
+        }
+    }
 }

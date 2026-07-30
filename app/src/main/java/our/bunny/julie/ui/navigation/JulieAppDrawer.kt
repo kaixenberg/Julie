@@ -22,10 +22,13 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.layout.width
 import androidx.navigation.NavController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.launch
 import our.bunny.julie.domain.model.Pet
+import our.bunny.julie.ui.screens.pet.PetData
 
 @Composable
 fun JulieAppDrawer(
@@ -41,7 +44,7 @@ fun JulieAppDrawer(
     ModalNavigationDrawer(
         drawerState = drawerState,
         drawerContent = {
-            ModalDrawerSheet {
+            ModalDrawerSheet(modifier = Modifier.width(280.dp)) {
                 Text(
                     text = "Julie",
                     style = MaterialTheme.typography.titleLarge,
@@ -66,7 +69,12 @@ fun JulieAppDrawer(
 
                 pets.forEach { pet ->
                     NavigationDrawerItem(
-                        icon = { Icon(Icons.Default.Pets, contentDescription = null) },
+                        icon = { 
+                            Text(
+                                text = PetData.getEmojiForSpecies(pet.species),
+                                style = MaterialTheme.typography.titleMedium
+                            ) 
+                        },
                         label = { Text(pet.name) },
                         selected = currentRoute?.startsWith("pet_detail/${pet.id}") == true,
                         onClick = {

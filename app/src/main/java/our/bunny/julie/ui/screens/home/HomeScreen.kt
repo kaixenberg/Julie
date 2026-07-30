@@ -18,6 +18,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.compose.runtime.collectAsState
 import our.bunny.julie.domain.model.Pet
+import our.bunny.julie.ui.screens.pet.PetData
 import android.Manifest
 import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -120,15 +121,7 @@ fun PetCard(pet: Pet, onClick: () -> Unit) {
 
 @Composable
 fun PetAvatar(species: String) {
-    val emoji = when (species) {
-        "Dog" -> "🐶"
-        "Cat" -> "🐱"
-        "Rabbit", "Bunny" -> "🐰"
-        "Guinea Pig" -> "🐹"
-        "Mouse" -> "🐭"
-        "Bird" -> "🐦"
-        else -> "🐾"
-    }
+    val emoji = PetData.getEmojiForSpecies(species)
     Box(
         modifier = Modifier
             .size(48.dp)
