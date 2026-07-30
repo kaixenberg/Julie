@@ -14,6 +14,12 @@ import androidx.navigation.navArgument
 import androidx.compose.foundation.layout.padding
 import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.core.tween
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import our.bunny.julie.ui.screens.feeding.FeedingLogScreen
+import our.bunny.julie.ui.screens.medication.MedicationListScreen
+import our.bunny.julie.ui.screens.water.WaterTrackerScreen
+import our.bunny.julie.ui.screens.weight.WeightTrackerScreen
 
 sealed class Screen(val route: String) {
     object Dashboard : Screen("dashboard")
@@ -40,11 +46,28 @@ fun AppNavigation(navController: NavHostController, onOpenDrawer: () -> Unit) {
         popExitTransition = { slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.End, tween(400)) }
     ) {
         composable(Screen.Dashboard.route) {
-            JulieAppScaffold(title = "Dashboard", onOpenDrawer = onOpenDrawer) { innerPadding ->
+            JulieAppScaffold(
+                title = "Dashboard", 
+                onOpenDrawer = onOpenDrawer,
+                floatingActionButton = {
+                    androidx.compose.material3.FloatingActionButton(onClick = { navController.navigate(Screen.AddEditPet.createRoute()) }) {
+                        androidx.compose.material3.Icon(
+                            imageVector = Icons.Default.Add, 
+                            contentDescription = "Add Pet"
+                        )
+                    }
+                }
+            ) { innerPadding ->
                 our.bunny.julie.ui.screens.dashboard.DashboardScreen(
                     paddingValues = innerPadding,
                     onNavigateToAddPet = {
                         navController.navigate(Screen.AddEditPet.createRoute())
+                    },
+                    onNavigateToPetDetail = { petId ->
+                        navController.navigate(Screen.PetDetail.createRoute(petId.toString()))
+                    },
+                    onNavigateToPetStatDetail = { petId, statType ->
+                        navController.navigate(Screen.PetStatDetail.createRoute(petId.toString(), statType))
                     }
                 )
             }
@@ -66,24 +89,48 @@ fun AppNavigation(navController: NavHostController, onOpenDrawer: () -> Unit) {
         }
         composable(
             route = Screen.PetDetail.route,
-            arguments = listOf(navArgument("petId") { type = NavType.StringType })
+            arguments = listOf(navArgument("petId") { type = NavType.LongType })
         ) { backStackEntry ->
-            val petId = backStackEntry.arguments?.getString("petId")
-            JulieAppScaffold(title = "Pet Detail", onOpenDrawer = onOpenDrawer) { innerPadding ->
-                PlaceholderScreen("Pet Detail - ID: $petId", innerPadding)
-            }
+            val petId = backStackEntry.arguments?.getLong("petId") ?: -1L
+            our.bunny.julie.ui.screens.pet.PetDetailScreen(
+                onNavigateUp = { navController.navigateUp() },
+                onNavigateToEditPet = { id -> navController.navigate(Screen.AddEditPet.createRoute(id)) },
+                onNavigateToWeightTracker = { id -> navController.navigate(Screen.PetStatDetail.createRoute(id.toString(), StatType.Weight)) },
+                onNavigateToWaterTracker = { id -> navController.navigate(Screen.PetStatDetail.createRoute(id.toString(), StatType.Water)) },
+                onNavigateToFeedingLog = { id -> navController.navigate(Screen.PetStatDetail.createRoute(id.toString(), StatType.Feeding)) },
+                onNavigateToMedicationList = { id -> navController.navigate(Screen.PetStatDetail.createRoute(id.toString(), StatType.Medication)) },
+                onNavigateToTimeline = { id -> navController.navigate(Screen.PetStatDetail.createRoute(id.toString(), StatType.Timeline)) }
+            )
         }
         composable(
             route = Screen.PetStatDetail.route,
             arguments = listOf(
-                navArgument("petId") { type = NavType.StringType },
+                navArgument("petId") { type = NavType.LongType },
                 navArgument("statType") { type = NavType.StringType }
             )
         ) { backStackEntry ->
-            val petId = backStackEntry.arguments?.getString("petId")
+            val petId = backStackEntry.arguments?.getLong("petId") ?: -1L
             val statTypeStr = backStackEntry.arguments?.getString("statType")
-            JulieAppScaffold(title = "$statTypeStr", onOpenDrawer = onOpenDrawer) { innerPadding ->
-                PlaceholderScreen("Pet Stat Detail - ID: $petId, Stat: $statTypeStr", innerPadding)
+            
+            // Thin dispatcher based on statType
+            when (statTypeStr) {
+                StatType.Weight.name -> {
+                    WeightTrackerScreen(onNavigateUp = { navController.navigateUp() })
+                }
+                StatType.Water.name -> {
+                    WaterTrackerScreen(onNavigateUp = { navController.navigateUp() })
+                }
+                StatType.Feeding.name -> {
+                    FeedingLogScreen(onNavigateUp = { navController.navigateUp() })
+                }
+                StatType.Medication.name -> {
+                    MedicationListScreen(onNavigateUp = { navController.navigateUp() })
+                }
+                else -> {
+                    JulieAppScaffold(title = "$statTypeStr", onOpenDrawer = onOpenDrawer) { innerPadding ->
+                        PlaceholderScreen("Pet Stat Detail - ID: $petId, Stat: $statTypeStr", innerPadding)
+                    }
+                }
             }
         }
     }

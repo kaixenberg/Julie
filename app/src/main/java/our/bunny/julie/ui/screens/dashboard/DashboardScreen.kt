@@ -22,6 +22,8 @@ import our.bunny.julie.ui.screens.home.PetAvatar
 fun DashboardScreen(
     paddingValues: PaddingValues,
     onNavigateToAddPet: () -> Unit,
+    onNavigateToPetDetail: (Long) -> Unit,
+    onNavigateToPetStatDetail: (Long, our.bunny.julie.ui.navigation.StatType) -> Unit,
     viewModel: DashboardViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -76,16 +78,22 @@ fun DashboardScreen(
             }
         }
     } else {
+        val listState = androidx.compose.foundation.lazy.rememberLazyListState()
         // List of all pets
         LazyColumn(
+            state = listState,
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues),
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(24.dp)
         ) {
-            items(uiState.petsData) { petData ->
-                PetSummarySection(petData = petData)
+            items(uiState.petsData, key = { it.pet.id }) { petData ->
+                PetSummarySection(
+                    petData = petData,
+                    onNavigateToPetDetail = onNavigateToPetDetail,
+                    onNavigateToPetStatDetail = onNavigateToPetStatDetail
+                )
                 
                 if (uiState.petsData.size >= 3) {
                     HorizontalDivider(modifier = Modifier.padding(top = 24.dp), color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
@@ -96,14 +104,21 @@ fun DashboardScreen(
 }
 
 @Composable
-fun PetSummarySection(petData: PetDashboardData) {
+fun PetSummarySection(
+    petData: PetDashboardData,
+    onNavigateToPetDetail: (Long) -> Unit,
+    onNavigateToPetStatDetail: (Long, our.bunny.julie.ui.navigation.StatType) -> Unit
+) {
     Column(
         modifier = Modifier.fillMaxWidth()
     ) {
         // Header
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.padding(bottom = 16.dp)
+            modifier = Modifier
+                .padding(bottom = 16.dp)
+                .clickable { onNavigateToPetDetail(petData.pet.id) }
+                .padding(4.dp) // extra touch target padding
         ) {
             PetAvatar(species = petData.pet.species)
             Spacer(modifier = Modifier.width(16.dp))
@@ -131,14 +146,14 @@ fun PetSummarySection(petData: PetDashboardData) {
                 value = petData.latestWeight?.let { "${it.weight} ${it.unit}" } ?: "--",
                 subtitle = "Latest",
                 modifier = Modifier.weight(1f),
-                onClick = { /* TODO */ }
+                onClick = { onNavigateToPetStatDetail(petData.pet.id, our.bunny.julie.ui.navigation.StatType.Weight) }
             )
             ExpressiveStatCard(
                 title = "Water",
                 value = "${petData.todayWater} ml",
                 subtitle = "Today",
                 modifier = Modifier.weight(1f),
-                onClick = { /* TODO */ }
+                onClick = { onNavigateToPetStatDetail(petData.pet.id, our.bunny.julie.ui.navigation.StatType.Water) }
             )
         }
         Spacer(modifier = Modifier.height(12.dp))
@@ -151,14 +166,14 @@ fun PetSummarySection(petData: PetDashboardData) {
                 value = petData.latestFeeding?.food ?: "--",
                 subtitle = "Recent",
                 modifier = Modifier.weight(1f),
-                onClick = { /* TODO */ }
+                onClick = { onNavigateToPetStatDetail(petData.pet.id, our.bunny.julie.ui.navigation.StatType.Feeding) }
             )
             ExpressiveStatCard(
                 title = "Medications",
                 value = petData.activeMedicationsCount.toString(),
                 subtitle = "Active",
                 modifier = Modifier.weight(1f),
-                onClick = { /* TODO */ }
+                onClick = { onNavigateToPetStatDetail(petData.pet.id, our.bunny.julie.ui.navigation.StatType.Medication) }
             )
         }
     }

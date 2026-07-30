@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Pets
 import androidx.compose.material.icons.filled.Settings
@@ -78,6 +79,22 @@ fun JulieAppDrawer(
                         modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
                     )
                 }
+
+                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+
+                NavigationDrawerItem(
+                    icon = { Icon(Icons.Default.Add, contentDescription = null) },
+                    label = { Text("Add Pet") },
+                    selected = currentRoute?.startsWith("add_edit_pet") == true,
+                    onClick = {
+                        coroutineScope.launch { drawerState.close() }
+                        navController.navigate("add_edit_pet/-1") {
+                            popUpTo(navController.graph.startDestinationId)
+                            launchSingleTop = true
+                        }
+                    },
+                    modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
+                )
 
                 HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
