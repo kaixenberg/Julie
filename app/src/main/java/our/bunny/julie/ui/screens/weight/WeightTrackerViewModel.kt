@@ -14,6 +14,7 @@ import kotlinx.coroutines.launch
 import our.bunny.julie.domain.model.WeightEntry
 import our.bunny.julie.domain.repository.SettingsRepository
 import our.bunny.julie.domain.repository.TrackerRepository
+import our.bunny.julie.util.SearchUtil
 import our.bunny.julie.util.UnitFormatter
 import our.bunny.julie.util.WeightUnit
 import java.time.LocalDateTime
@@ -65,7 +66,7 @@ class WeightTrackerViewModel @Inject constructor(
         // Search
         if (query.isNotBlank()) {
             filtered = filtered.filter {
-                it.notes.contains(query, ignoreCase = true)
+                SearchUtil.fuzzyMatches(query, it.notes)
             }
         }
 

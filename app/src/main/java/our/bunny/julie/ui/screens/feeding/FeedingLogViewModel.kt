@@ -13,6 +13,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import our.bunny.julie.domain.model.FeedingLog
 import our.bunny.julie.domain.repository.TrackerRepository
+import our.bunny.julie.util.SearchUtil
 import java.time.LocalDateTime
 import javax.inject.Inject
 
@@ -58,7 +59,7 @@ class FeedingLogViewModel @Inject constructor(
         // Search
         if (query.isNotBlank()) {
             filtered = filtered.filter {
-                it.food.contains(query, ignoreCase = true) || it.notes.contains(query, ignoreCase = true)
+                SearchUtil.fuzzyMatches(query, it.food) || SearchUtil.fuzzyMatches(query, it.notes)
             }
         }
 

@@ -13,8 +13,10 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import our.bunny.julie.domain.model.Medication
+import our.bunny.julie.data.local.entity.MedicationWithSchedules
 import our.bunny.julie.domain.repository.TrackerRepository
 import our.bunny.julie.util.ReminderManager
+import our.bunny.julie.util.SearchUtil
 import javax.inject.Inject
 
 enum class MedicationSort { NAME, STATUS }
@@ -57,7 +59,7 @@ class MedicationListViewModel @Inject constructor(
         // Search
         if (query.isNotBlank()) {
             filtered = filtered.filter {
-                it.name.contains(query, ignoreCase = true) || it.notes.contains(query, ignoreCase = true)
+                SearchUtil.fuzzyMatches(query, it.name) || SearchUtil.fuzzyMatches(query, it.notes)
             }
         }
 
