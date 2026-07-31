@@ -31,6 +31,11 @@ class SettingsRepository @Inject constructor(
         val PALETTE_STYLE = stringPreferencesKey("palette_style")
         val PREDICTIVE_BACK = booleanPreferencesKey("predictive_back")
         val BLUR_EFFECTS = booleanPreferencesKey("blur_effects")
+        val NOTIFICATIONS_ENABLED = booleanPreferencesKey("notifications_enabled")
+        val REMINDERS_WEIGHT = booleanPreferencesKey("reminders_weight")
+        val REMINDERS_WATER = booleanPreferencesKey("reminders_water")
+        val REMINDERS_FEEDING = booleanPreferencesKey("reminders_feeding")
+        val REMINDERS_MEDICATION = booleanPreferencesKey("reminders_medication")
     }
 
     val weightUnitFlow: Flow<WeightUnit> = context.dataStore.data.map { preferences ->
@@ -120,6 +125,56 @@ class SettingsRepository @Inject constructor(
     suspend fun updateBlurEffects(enabled: Boolean) {
         context.dataStore.edit { preferences ->
             preferences[PreferencesKeys.BLUR_EFFECTS] = enabled
+        }
+    }
+
+    val notificationsEnabledFlow: Flow<Boolean> = context.dataStore.data.map { preferences ->
+        preferences[PreferencesKeys.NOTIFICATIONS_ENABLED] ?: false
+    }
+
+    val remindersWeightFlow: Flow<Boolean> = context.dataStore.data.map { preferences ->
+        preferences[PreferencesKeys.REMINDERS_WEIGHT] ?: true
+    }
+
+    val remindersWaterFlow: Flow<Boolean> = context.dataStore.data.map { preferences ->
+        preferences[PreferencesKeys.REMINDERS_WATER] ?: true
+    }
+
+    val remindersFeedingFlow: Flow<Boolean> = context.dataStore.data.map { preferences ->
+        preferences[PreferencesKeys.REMINDERS_FEEDING] ?: true
+    }
+
+    val remindersMedicationFlow: Flow<Boolean> = context.dataStore.data.map { preferences ->
+        preferences[PreferencesKeys.REMINDERS_MEDICATION] ?: true
+    }
+
+    suspend fun updateNotificationsEnabled(enabled: Boolean) {
+        context.dataStore.edit { preferences ->
+            preferences[PreferencesKeys.NOTIFICATIONS_ENABLED] = enabled
+        }
+    }
+
+    suspend fun updateRemindersWeight(enabled: Boolean) {
+        context.dataStore.edit { preferences ->
+            preferences[PreferencesKeys.REMINDERS_WEIGHT] = enabled
+        }
+    }
+
+    suspend fun updateRemindersWater(enabled: Boolean) {
+        context.dataStore.edit { preferences ->
+            preferences[PreferencesKeys.REMINDERS_WATER] = enabled
+        }
+    }
+
+    suspend fun updateRemindersFeeding(enabled: Boolean) {
+        context.dataStore.edit { preferences ->
+            preferences[PreferencesKeys.REMINDERS_FEEDING] = enabled
+        }
+    }
+
+    suspend fun updateRemindersMedication(enabled: Boolean) {
+        context.dataStore.edit { preferences ->
+            preferences[PreferencesKeys.REMINDERS_MEDICATION] = enabled
         }
     }
 }

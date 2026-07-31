@@ -16,15 +16,39 @@ import our.bunny.julie.util.WeightUnit
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 
+import android.Manifest
+import android.content.Intent
+import android.os.Build
+import android.provider.Settings
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.ui.platform.LocalContext
+import our.bunny.julie.JulieApplication
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
     paddingValues: PaddingValues,
     settingsViewModel: SettingsViewModel = hiltViewModel(),
-    appearanceViewModel: AppearanceSettingsViewModel = hiltViewModel()
+    appearanceViewModel: AppearanceSettingsViewModel = hiltViewModel(),
+    notificationViewModel: NotificationSettingsViewModel = hiltViewModel()
 ) {
     val settingsUiState by settingsViewModel.uiState.collectAsState()
     val appearanceUiState by appearanceViewModel.uiState.collectAsState()
+    val notificationUiState by notificationViewModel.uiState.collectAsState()
+    
+    val context = LocalContext.current
+    
+    val permissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) {
+            notificationViewModel.updateNotificationsEnabled(true)
+        } else {
+            notificationViewModel.updateNotificationsEnabled(false)
+        }
+    }
 
     Column(
         modifier = Modifier
@@ -215,12 +239,106 @@ fun SettingsScreen(
             }
         }
 
-        // --- PLACEHOLDERS ---
+        // --- NOTIFICATIONS ---
         Text("Notifications", style = MaterialTheme.typography.titleLarge)
-        Card(modifier = Modifier.fillMaxWidth(), onClick = { /* TODO */ }) {
-            Row(modifier = Modifier.padding(16.dp).fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Text("Manage Notification Preferences", style = MaterialTheme.typography.titleMedium)
-                Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null)
+        Card(modifier = Modifier.fillMaxWidth()) {
+            Column(
+                modifier = Modifier.padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                // Master Toggle
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text("Enable Notifications", style = MaterialTheme.typography.titleMedium)
+                        Text("Receive reminders for your pets", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                    Switch(
+                        checked = notificationUiState.notificationsEnabled,
+                        onCheckedChange = { enabled -> 
+                            if (enabled) {
+                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                                    permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                                } else {
+                                    notificationViewModel.updateNotificationsEnabled(true)
+                                }
+                            } else {
+                                notificationViewModel.updateNotificationsEnabled(false)
+                            }
+                        }
+                    )
+                }
+
+                AnimatedVisibility(visible = notificationUiState.notificationsEnabled) {
+                    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                        HorizontalDivider()
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text("Weight Reminders", style = MaterialTheme.typography.bodyLarge)
+                            Switch(
+                                checked = notificationUiState.remindersWeight,
+                                onCheckedChange = { notificationViewModel.updateRemindersWeight(it) }
+                            )
+                        }
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text("Water Reminders", style = MaterialTheme.typography.bodyLarge)
+                            Switch(
+                                checked = notificationUiState.remindersWater,
+                                onCheckedChange = { notificationViewModel.updateRemindersWater(it) }
+                            )
+                        }
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text("Feeding Reminders", style = MaterialTheme.typography.bodyLarge)
+                            Switch(
+                                checked = notificationUiState.remindersFeeding,
+                                onCheckedChange = { notificationViewModel.updateRemindersFeeding(it) }
+                            )
+                        }
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text("Medication Reminders", style = MaterialTheme.typography.bodyLarge)
+                            Switch(
+                                checked = notificationUiState.remindersMedication,
+                                onCheckedChange = { notificationViewModel.updateRemindersMedication(it) }
+                            )
+                        }
+
+                        HorizontalDivider()
+
+                        TextButton(
+                            onClick = {
+                                val intent = Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {
+                                    putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
+                                }
+                                context.startActivity(intent)
+                            },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text("Customize sound & vibration")
+                        }
+                    }
+                }
             }
         }
 
