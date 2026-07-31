@@ -500,7 +500,7 @@ fun SettingsScreen(
             }
         }
 
-        Text("Data & Export", style = MaterialTheme.typography.titleLarge)
+        Text("Backup & Export", style = MaterialTheme.typography.titleLarge)
         Card(modifier = Modifier.fillMaxWidth()) {
             Column(modifier = Modifier.fillMaxWidth()) {
                 SettingsActionRow(
@@ -526,7 +526,7 @@ fun SettingsScreen(
         Text("About", style = MaterialTheme.typography.titleLarge)
         Card(modifier = Modifier.fillMaxWidth(), onClick = onNavigateToAbout) {
             Row(modifier = Modifier.padding(16.dp).fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Text("About Pet Health App", style = MaterialTheme.typography.titleMedium)
+                Text("About Julie", style = MaterialTheme.typography.titleMedium)
                 Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null)
             }
         }
