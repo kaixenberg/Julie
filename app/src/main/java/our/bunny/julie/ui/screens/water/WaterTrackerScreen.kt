@@ -191,7 +191,10 @@ fun AddWaterDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(if (editingEntry != null) "Edit Water" else "Add Water") },
+        title = {
+            our.bunny.julie.ui.components.BlurDialogWindow()
+            Text(if (editingEntry != null) "Edit Water" else "Add Water") 
+        },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedTextField(

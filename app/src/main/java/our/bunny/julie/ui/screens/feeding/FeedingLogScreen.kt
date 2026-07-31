@@ -215,7 +215,10 @@ fun AddFeedingDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(if (editingEntry != null) "Edit Meal" else "Add Meal") },
+        title = { 
+            our.bunny.julie.ui.components.BlurDialogWindow()
+            Text(if (editingEntry != null) "Edit Meal" else "Add Meal") 
+        },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedTextField(

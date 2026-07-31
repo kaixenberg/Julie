@@ -213,7 +213,10 @@ fun AddWeightDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(if (editingEntry != null) "Edit Weight" else "Add Weight") },
+        title = { 
+            our.bunny.julie.ui.components.BlurDialogWindow()
+            Text(if (editingEntry != null) "Edit Weight" else "Add Weight") 
+        },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedTextField(

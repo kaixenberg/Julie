@@ -227,7 +227,10 @@ fun AddMedicationDialog(
     if (showTimePicker) {
         AlertDialog(
             onDismissRequest = { showTimePicker = false },
-            title = { Text(if (editingSchedule != null) "Edit Schedule" else "Add Schedule") },
+            title = {
+                our.bunny.julie.ui.components.BlurDialogWindow()
+                Text(if (editingSchedule != null) "Edit Schedule" else "Add Schedule") 
+            },
             text = {
                 Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(16.dp)) {
                     TimePicker(state = timePickerState)
@@ -289,7 +292,10 @@ fun AddMedicationDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(if (editingMedication != null) "Edit Medication" else "Add Medication") },
+        title = {
+            our.bunny.julie.ui.components.BlurDialogWindow()
+            Text(if (editingMedication != null) "Edit Medication" else "Add Medication") 
+        },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedTextField(
