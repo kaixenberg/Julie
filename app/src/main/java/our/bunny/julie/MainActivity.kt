@@ -17,6 +17,13 @@ import our.bunny.julie.ui.screens.home.HomeViewModel
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.runtime.CompositionLocalProvider
+import our.bunny.julie.domain.model.ThemeConfig
+import our.bunny.julie.domain.repository.SettingsRepository
+import our.bunny.julie.ui.theme.LocalBlurEnabled
+import our.bunny.julie.ui.theme.LocalPredictiveBackEnabled
+import javax.inject.Inject
 
 
 // ─── Debug flag ───────────────────────────────────────────────────────────────
@@ -26,6 +33,10 @@ private const val DEBUG_SHOW_THEME_PREVIEW = false
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+
+    @Inject
+    lateinit var settingsRepository: SettingsRepository
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -34,12 +45,28 @@ class MainActivity : ComponentActivity() {
                 // Launches the self-contained debug preview — no NavGraph needed.
                 our.bunny.julie.ui.screens.debug.ThemePreviewScreen()
             } else {
-                // Production path: params are hardcoded here until the Settings screen
-                // is built (Phase 9). Swap paletteStyle / seedColor freely to preview.
-                JulieTheme(
-                    dynamicColor = true,                    // wallpaper seed on API 27+
-                    paletteStyle = PaletteStyle.TonalSpot,  // change to taste
+                // Production path: params read from DataStore
+                val themeConfig by settingsRepository.themeConfigFlow.collectAsState(initial = ThemeConfig.SYSTEM)
+                val dynamicColor by settingsRepository.dynamicColorFlow.collectAsState(initial = true)
+                val paletteStyle by settingsRepository.paletteStyleFlow.collectAsState(initial = PaletteStyle.TonalSpot)
+                val predictiveBack by settingsRepository.predictiveBackFlow.collectAsState(initial = true)
+                val blurEffects by settingsRepository.blurEffectsFlow.collectAsState(initial = false)
+
+                val isDark = when (themeConfig) {
+                    ThemeConfig.DARK -> true
+                    ThemeConfig.LIGHT -> false
+                    ThemeConfig.SYSTEM -> isSystemInDarkTheme()
+                }
+
+                CompositionLocalProvider(
+                    LocalBlurEnabled provides blurEffects,
+                    LocalPredictiveBackEnabled provides predictiveBack
                 ) {
+                    JulieTheme(
+                        darkTheme = isDark,
+                        dynamicColor = dynamicColor,
+                        paletteStyle = paletteStyle,
+                    ) {
                     Surface(
                         modifier = Modifier.fillMaxSize(),
                         color = MaterialTheme.colorScheme.background,
@@ -64,6 +91,7 @@ class MainActivity : ComponentActivity() {
                             )
                         }
                     }
+                }
                 }
             }
         }

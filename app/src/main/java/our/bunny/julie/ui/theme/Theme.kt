@@ -18,6 +18,10 @@ import androidx.compose.ui.unit.dp
 // ─── Default seed: a warm earthy green suited to a pet health app ──────────────
 val DefaultSeedColor = Color(0xFF6B9E5E)
 
+// ─── App-wide Feature Flags (Provided via Settings) ────────────────────────
+val LocalBlurEnabled = androidx.compose.runtime.compositionLocalOf { false }
+val LocalPredictiveBackEnabled = androidx.compose.runtime.compositionLocalOf { true }
+
 // ─── Expressive shape scale ────────────────────────────────────────────────────
 // M3 Expressive bumps corners: ExtraSmall 4→4, Small 8→8, Medium 12→12,
 // Large 16→16, ExtraLarge 28→28 (new), ExtraExtraLarge 48dp (new).
