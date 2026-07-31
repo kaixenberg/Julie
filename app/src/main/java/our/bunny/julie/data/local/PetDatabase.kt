@@ -12,6 +12,8 @@ import our.bunny.julie.data.local.entity.WeightEntryEntity
 import our.bunny.julie.data.local.entity.MedicationEntity
 import our.bunny.julie.data.local.entity.MedicationScheduleEntity
 
+import our.bunny.julie.data.local.dao.BackupRestoreDao
+
 @Database(
     entities = [
         PetEntity::class,
@@ -28,6 +30,7 @@ import our.bunny.julie.data.local.entity.MedicationScheduleEntity
 abstract class PetDatabase : RoomDatabase() {
     abstract val petDao: PetDao
     abstract val trackerDao: TrackerDao
+    abstract val backupRestoreDao: BackupRestoreDao
 
     companion object {
         const val DATABASE_NAME = "julie_db"

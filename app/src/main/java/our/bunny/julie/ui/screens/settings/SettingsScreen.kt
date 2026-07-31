@@ -3,6 +3,7 @@ package our.bunny.julie.ui.screens.settings
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.clickable
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -16,10 +17,14 @@ import our.bunny.julie.util.WeightUnit
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.outlined.CloudUpload
+import androidx.compose.material.icons.outlined.CloudDownload
 import android.app.TimePickerDialog
+import android.net.Uri
 
 import android.Manifest
 import android.app.AlarmManager
+import android.content.Context
 import android.content.Intent
 import android.os.Build
 import android.provider.Settings
@@ -35,14 +40,27 @@ fun SettingsScreen(
     paddingValues: PaddingValues,
     settingsViewModel: SettingsViewModel = hiltViewModel(),
     appearanceViewModel: AppearanceSettingsViewModel = hiltViewModel(),
-    notificationViewModel: NotificationSettingsViewModel = hiltViewModel()
+    notificationViewModel: NotificationSettingsViewModel = hiltViewModel(),
+    backupRestoreViewModel: BackupRestoreViewModel = hiltViewModel()
 ) {
     val settingsUiState by settingsViewModel.uiState.collectAsState()
     val appearanceUiState by appearanceViewModel.uiState.collectAsState()
     val notificationUiState by notificationViewModel.uiState.collectAsState()
     
     val context = LocalContext.current
-    val alarmManager = context.getSystemService(android.content.Context.ALARM_SERVICE) as AlarmManager
+    val alarmManager = remember { context.getSystemService(Context.ALARM_SERVICE) as AlarmManager }
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    LaunchedEffect(Unit) {
+        backupRestoreViewModel.events.collect { event ->
+            when (event) {
+                is BackupRestoreEvent.ExportSuccess -> snackbarHostState.showSnackbar("Backup exported successfully")
+                is BackupRestoreEvent.ExportError -> snackbarHostState.showSnackbar("Export failed: ${event.message}")
+                is BackupRestoreEvent.ImportSuccess -> snackbarHostState.showSnackbar("Data restored successfully")
+                is BackupRestoreEvent.ImportError -> snackbarHostState.showSnackbar("Restore failed: ${event.message}")
+            }
+        }
+    }
     
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -54,8 +72,52 @@ fun SettingsScreen(
         }
     }
 
-    Column(
-        modifier = Modifier
+    var showRestoreConfirmDialog by remember { mutableStateOf(false) }
+    var restoreUri by remember { mutableStateOf<Uri?>(null) }
+    val exportLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { uri ->
+        if (uri != null) {
+            backupRestoreViewModel.exportData(uri)
+        }
+    }
+    
+    val importLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        if (uri != null) {
+            restoreUri = uri
+            showRestoreConfirmDialog = true
+        }
+    }
+
+    if (showRestoreConfirmDialog) {
+        AlertDialog(
+            onDismissRequest = { 
+                showRestoreConfirmDialog = false 
+                restoreUri = null
+            },
+            title = { Text("Restore Data") },
+            text = { Text("This will overwrite existing data for matching pets. Are you sure you want to continue?") },
+            confirmButton = {
+                TextButton(onClick = {
+                    restoreUri?.let { backupRestoreViewModel.importData(it) }
+                    showRestoreConfirmDialog = false
+                    restoreUri = null
+                }) {
+                    Text("Restore")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { 
+                    showRestoreConfirmDialog = false 
+                    restoreUri = null
+                }) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
+
+    Box(modifier = Modifier.fillMaxSize()) {
+        Column(
+            modifier = Modifier
             .fillMaxSize()
             .padding(paddingValues)
             .padding(horizontal = 16.dp)
@@ -437,10 +499,25 @@ fun SettingsScreen(
         }
 
         Text("Data & Export", style = MaterialTheme.typography.titleLarge)
-        Card(modifier = Modifier.fillMaxWidth(), onClick = { /* TODO */ }) {
-            Row(modifier = Modifier.padding(16.dp).fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Text("Manage App Data", style = MaterialTheme.typography.titleMedium)
-                Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null)
+        Card(modifier = Modifier.fillMaxWidth()) {
+            Column(modifier = Modifier.fillMaxWidth()) {
+                SettingsActionRow(
+                    icon = Icons.Outlined.CloudUpload,
+                    title = "Backup Data",
+                    subtitle = "Export all pets and history",
+                    onClick = { 
+                        exportLauncher.launch("julie_backup_${System.currentTimeMillis()}.json")
+                    }
+                )
+                HorizontalDivider()
+                SettingsActionRow(
+                    icon = Icons.Outlined.CloudDownload,
+                    title = "Restore Data",
+                    subtitle = "Import data from a backup file",
+                    onClick = { 
+                        importLauncher.launch(arrayOf("application/json", "*/*"))
+                    }
+                )
             }
         }
 
@@ -453,5 +530,34 @@ fun SettingsScreen(
         }
 
         Spacer(modifier = Modifier.height(32.dp))
+    }
+        
+        SnackbarHost(
+            hostState = snackbarHostState,
+            modifier = Modifier.align(Alignment.BottomCenter)
+        )
+    }
+}
+
+@Composable
+fun SettingsActionRow(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    title: String,
+    subtitle: String,
+    onClick: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(16.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(imageVector = icon, contentDescription = null)
+        Spacer(modifier = Modifier.width(16.dp))
+        Column {
+            Text(text = title, style = MaterialTheme.typography.titleMedium)
+            Text(text = subtitle, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
     }
 }
