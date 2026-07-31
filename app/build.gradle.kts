@@ -5,6 +5,7 @@ plugins {
     alias(libs.plugins.google.devtools.ksp)
     alias(libs.plugins.hilt.android)
     alias(libs.plugins.jetbrains.kotlin.serialization)
+    alias(libs.plugins.aboutlibraries.plugin)
 }
 
 android {
@@ -42,6 +43,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
     packaging {
         resources {
@@ -87,6 +89,9 @@ dependencies {
 
     // Serialization
     implementation(libs.kotlinx.serialization.json)
+    
+    // AboutLibraries
+    implementation(libs.aboutlibraries.compose.m3)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

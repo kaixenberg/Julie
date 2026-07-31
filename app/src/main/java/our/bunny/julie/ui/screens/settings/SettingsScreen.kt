@@ -38,6 +38,8 @@ import our.bunny.julie.JulieApplication
 @Composable
 fun SettingsScreen(
     paddingValues: PaddingValues,
+    onNavigateBack: () -> Unit = {},
+    onNavigateToAbout: () -> Unit = {},
     settingsViewModel: SettingsViewModel = hiltViewModel(),
     appearanceViewModel: AppearanceSettingsViewModel = hiltViewModel(),
     notificationViewModel: NotificationSettingsViewModel = hiltViewModel(),
@@ -522,7 +524,7 @@ fun SettingsScreen(
         }
 
         Text("About", style = MaterialTheme.typography.titleLarge)
-        Card(modifier = Modifier.fillMaxWidth(), onClick = { /* TODO */ }) {
+        Card(modifier = Modifier.fillMaxWidth(), onClick = onNavigateToAbout) {
             Row(modifier = Modifier.padding(16.dp).fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 Text("About Pet Health App", style = MaterialTheme.typography.titleMedium)
                 Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null)

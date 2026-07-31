@@ -24,6 +24,8 @@ import our.bunny.julie.ui.screens.weight.WeightTrackerScreen
 sealed class Screen(val route: String) {
     object Dashboard : Screen("dashboard")
     object Settings : Screen("settings")
+    object About : Screen("about")
+    object Licenses : Screen("licenses")
     object PetDetail : Screen("pet_detail/{petId}") {
         fun createRoute(petId: String) = "pet_detail/$petId"
     }
@@ -84,7 +86,25 @@ fun AppNavigation(navController: NavHostController, onOpenDrawer: () -> Unit) {
         }
         composable(Screen.Settings.route) {
             JulieAppScaffold(title = "Settings", onOpenDrawer = onOpenDrawer) { innerPadding ->
-                our.bunny.julie.ui.screens.settings.SettingsScreen(innerPadding)
+                our.bunny.julie.ui.screens.settings.SettingsScreen(
+                    paddingValues = innerPadding,
+                    onNavigateToAbout = { navController.navigate(Screen.About.route) }
+                )
+            }
+        }
+        composable(Screen.About.route) {
+            our.bunny.julie.ui.screens.about.AboutScreen(
+                onNavigateBack = { navController.navigateUp() },
+                onNavigateToLicenses = { navController.navigate(Screen.Licenses.route) }
+            )
+        }
+        composable(Screen.Licenses.route) {
+            JulieAppScaffold(title = "Open Source Licenses", onOpenDrawer = onOpenDrawer) { innerPadding ->
+                androidx.compose.foundation.layout.Box(modifier = Modifier.padding(innerPadding)) {
+                    com.mikepenz.aboutlibraries.ui.compose.m3.LibrariesContainer(
+                        modifier = Modifier.fillMaxSize()
+                    )
+                }
             }
         }
         composable(

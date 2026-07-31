@@ -1,0 +1,236 @@
+package our.bunny.julie.ui.screens.about
+
+import android.content.Intent
+import android.net.Uri
+import android.widget.Toast
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
+import our.bunny.julie.BuildConfig
+import our.bunny.julie.R
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun AboutScreen(
+    onNavigateBack: () -> Unit,
+    onNavigateToLicenses: () -> Unit
+) {
+    val context = LocalContext.current
+    var tapCount by remember { mutableIntStateOf(0) }
+    var lastTapTime by remember { mutableLongStateOf(0L) }
+    var showEasterEgg by remember { mutableStateOf(false) }
+
+    fun handleIconTap() {
+        val currentTime = System.currentTimeMillis()
+        if (currentTime - lastTapTime > 1500) {
+            tapCount = 1
+        } else {
+            tapCount++
+            if (tapCount >= 7) {
+                showEasterEgg = true
+                Toast.makeText(context, "Fly High 🕊️", Toast.LENGTH_LONG).show()
+                tapCount = 0
+            }
+        }
+        lastTapTime = currentTime
+    }
+
+    if (showEasterEgg) {
+        Dialog(
+            onDismissRequest = { showEasterEgg = false },
+            properties = DialogProperties(usePlatformDefaultWidth = false)
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .clickable { showEasterEgg = false }
+            ) {
+                // Assuming R.drawable.julie is the easter egg image
+                val imageRes = context.resources.getIdentifier("julie", "drawable", context.packageName)
+                if (imageRes != 0) {
+                    Image(
+                        painter = painterResource(id = imageRes),
+                        contentDescription = "Julie Easter Egg",
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop
+                    )
+                } else {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Text("Image 'julie' not found in drawable", color = Color.White)
+                    }
+                }
+            }
+        }
+    }
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("About") },
+                navigationIcon = {
+                    IconButton(onClick = onNavigateBack) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                    }
+                }
+            )
+        }
+    ) { paddingValues ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+                .padding(horizontal = 16.dp)
+                .verticalScroll(rememberScrollState()),
+            verticalArrangement = Arrangement.spacedBy(24.dp)
+        ) {
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // HEADER CARD
+            Card(
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(24.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    // Try to get ic_launcher
+                    val iconRes = context.resources.getIdentifier("ic_launcher", "mipmap", context.packageName)
+                    if (iconRes != 0) {
+                        Image(
+                            painter = painterResource(id = iconRes),
+                            contentDescription = "App Icon",
+                            modifier = Modifier
+                                .size(72.dp)
+                                .clickable { handleIconTap() }
+                        )
+                    } else {
+                        Icon(
+                            imageVector = Icons.Default.Info,
+                            contentDescription = "App Icon",
+                            modifier = Modifier
+                                .size(72.dp)
+                                .clickable { handleIconTap() },
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                    
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text("Julie", style = MaterialTheme.typography.headlineMedium)
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        "v${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+
+            // DEDICATION CARD
+            Card(
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp)
+                ) {
+                    Text(
+                        "I had the idea of making this app, when our pet rabbit Julie passed away; I wanted to honor her loss.",
+                        style = MaterialTheme.typography.bodyLarge,
+                        textAlign = TextAlign.Start
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Text(
+                        "Privacy Focused Local Pet Stats Tracker for Android",
+                        style = MaterialTheme.typography.bodyMedium.copy(fontStyle = FontStyle.Italic),
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
+            }
+
+            // CREDITS SECTION
+            Text("Credits", style = MaterialTheme.typography.titleLarge)
+            Card(
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column {
+                    SettingsActionRow(
+                        title = "Smarajit",
+                        onClick = {
+                            val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/kaixenberg"))
+                            context.startActivity(intent)
+                        }
+                    )
+                    HorizontalDivider()
+                    SettingsActionRow(
+                        title = "Shramana",
+                        onClick = {
+                            Toast.makeText(context, "My loving partner ❤️", Toast.LENGTH_SHORT).show()
+                        }
+                    )
+                    HorizontalDivider()
+                    SettingsActionRow(
+                        title = "Julie",
+                        onClick = {
+                            Toast.makeText(context, "🐰🕊️❤️", Toast.LENGTH_SHORT).show()
+                        }
+                    )
+                    HorizontalDivider()
+                    SettingsActionRow(
+                        title = "Source Code",
+                        onClick = {
+                            val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/kaixenberg/Julie"))
+                            context.startActivity(intent)
+                        }
+                    )
+                    HorizontalDivider()
+                    SettingsActionRow(
+                        title = "Open Source Licenses",
+                        onClick = onNavigateToLicenses
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(32.dp))
+        }
+    }
+}
+
+@Composable
+fun SettingsActionRow(
+    title: String,
+    onClick: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(16.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(text = title, style = MaterialTheme.typography.titleMedium)
+        Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null)
+    }
+}
