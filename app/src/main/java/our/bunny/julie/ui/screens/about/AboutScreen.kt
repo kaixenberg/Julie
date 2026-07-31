@@ -4,6 +4,7 @@ import android.content.Intent
 import android.net.Uri
 import android.widget.Toast
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -57,20 +58,40 @@ fun AboutScreen(
     if (showEasterEgg) {
         Dialog(
             onDismissRequest = { showEasterEgg = false },
-            properties = DialogProperties(usePlatformDefaultWidth = false)
+            properties = DialogProperties(
+                usePlatformDefaultWidth = false,
+                dismissOnClickOutside = false
+            )
         ) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .clickable { showEasterEgg = false }
+                    .background(Color.Black.copy(alpha = 0.9f))
             ) {
+                // Back Button
+                IconButton(
+                    onClick = { showEasterEgg = false },
+                    modifier = Modifier
+                        .align(Alignment.TopStart)
+                        .padding(16.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = "Close",
+                        tint = Color.White
+                    )
+                }
+
                 // Assuming R.drawable.julie is the easter egg image
                 val imageRes = context.resources.getIdentifier("julie", "drawable", context.packageName)
                 if (imageRes != 0) {
                     Image(
                         painter = painterResource(id = imageRes),
                         contentDescription = "Julie Easter Egg",
-                        modifier = Modifier.fillMaxSize(),
+                        modifier = Modifier
+                            .align(Alignment.Center)
+                            .fillMaxWidth()
+                            .aspectRatio(1f),
                         contentScale = ContentScale.Crop
                     )
                 } else {
