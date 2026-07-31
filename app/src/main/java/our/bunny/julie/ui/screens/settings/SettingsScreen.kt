@@ -163,7 +163,9 @@ fun SettingsScreen(
 
                 // Dynamic Color
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { appearanceViewModel.updateDynamicColor(!appearanceUiState.dynamicColor) },
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -227,7 +229,9 @@ fun SettingsScreen(
 
                 // Predictive Back
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { appearanceViewModel.updatePredictiveBack(!appearanceUiState.predictiveBack) },
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -245,7 +249,9 @@ fun SettingsScreen(
 
                 // Blur Effects
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { appearanceViewModel.updateBlurEffects(!appearanceUiState.blurEffects) },
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -316,7 +322,20 @@ fun SettingsScreen(
             ) {
                 // Master Toggle
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { 
+                            val enabled = !notificationUiState.notificationsEnabled
+                            if (enabled) {
+                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                                    permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                                } else {
+                                    notificationViewModel.updateNotificationsEnabled(true)
+                                }
+                            } else {
+                                notificationViewModel.updateNotificationsEnabled(false)
+                            }
+                        },
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -345,7 +364,9 @@ fun SettingsScreen(
                         HorizontalDivider()
 
                         Row(
-                            modifier = Modifier.fillMaxWidth(),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { notificationViewModel.updateQuietHoursEnabled(!notificationUiState.quietHoursEnabled) },
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
@@ -362,7 +383,9 @@ fun SettingsScreen(
                         HorizontalDivider()
 
                         Row(
-                            modifier = Modifier.fillMaxWidth(),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { notificationViewModel.updateRemindersWeight(!notificationUiState.remindersWeight) },
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
@@ -393,7 +416,9 @@ fun SettingsScreen(
                         }
 
                         Row(
-                            modifier = Modifier.fillMaxWidth(),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { notificationViewModel.updateRemindersWater(!notificationUiState.remindersWater) },
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
@@ -417,7 +442,9 @@ fun SettingsScreen(
                         }
 
                         Row(
-                            modifier = Modifier.fillMaxWidth(),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { notificationViewModel.updateRemindersFeeding(!notificationUiState.remindersFeeding) },
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
@@ -462,7 +489,19 @@ fun SettingsScreen(
                         }
 
                         Row(
-                            modifier = Modifier.fillMaxWidth(),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    val enabled = !notificationUiState.remindersMedication
+                                    if (enabled && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !alarmManager.canScheduleExactAlarms()) {
+                                        val intent = Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM).apply {
+                                            putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
+                                        }
+                                        context.startActivity(intent)
+                                    } else {
+                                        notificationViewModel.updateRemindersMedication(enabled)
+                                    }
+                                },
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
