@@ -20,6 +20,7 @@ import our.bunny.julie.util.WeightUnit
 import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
 import javax.inject.Inject
+import our.bunny.julie.manager.StatReminderManager
 
 enum class WeightSort { DATE_NEWEST, DATE_OLDEST, WEIGHT_HIGH, WEIGHT_LOW }
 enum class WeightFilter { ALL_TIME, LAST_7_DAYS, LAST_30_DAYS, LAST_6_MONTHS, LAST_YEAR }
@@ -34,7 +35,8 @@ data class WeightTrackerUiState(
 class WeightTrackerViewModel @Inject constructor(
     private val savedStateHandle: SavedStateHandle,
     private val trackerRepository: TrackerRepository,
-    private val settingsRepository: SettingsRepository
+    private val settingsRepository: SettingsRepository,
+    private val statReminderManager: StatReminderManager
 ) : ViewModel() {
 
     val petId: Long = savedStateHandle.get<Long>("petId") ?: -1L
@@ -108,6 +110,7 @@ class WeightTrackerViewModel @Inject constructor(
                 trackerRepository.deleteWeightEntry(entry)
             }
             clearSelection()
+            statReminderManager.rescheduleWeight(petId)
         }
     }
 
@@ -122,6 +125,7 @@ class WeightTrackerViewModel @Inject constructor(
                 notes = notes
             )
             trackerRepository.insertWeightEntry(entry)
+            statReminderManager.rescheduleWeight(petId)
         }
     }
 }

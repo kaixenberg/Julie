@@ -19,9 +19,10 @@ import our.bunny.julie.util.WaterUnit
 import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
 import javax.inject.Inject
+import our.bunny.julie.manager.StatReminderManager
 
 enum class WaterSort { DATE_NEWEST, DATE_OLDEST, AMOUNT_HIGH, AMOUNT_LOW }
-enum class WaterFilter { ALL_TIME, LAST_7_DAYS, LAST_30_DAYS }
+enum class WaterFilter { ALL_TIME, LAST_7_DAYS, LAST_30_DAYS, LAST_6_MONTHS, LAST_YEAR }
 
 data class WaterTrackerUiState(
     val entries: List<WaterLog> = emptyList(),
@@ -33,7 +34,8 @@ data class WaterTrackerUiState(
 class WaterTrackerViewModel @Inject constructor(
     private val savedStateHandle: SavedStateHandle,
     private val trackerRepository: TrackerRepository,
-    private val settingsRepository: SettingsRepository
+    private val settingsRepository: SettingsRepository,
+    private val statReminderManager: StatReminderManager
 ) : ViewModel() {
 
     val petId: Long = savedStateHandle.get<Long>("petId") ?: -1L
@@ -54,8 +56,22 @@ class WaterTrackerViewModel @Inject constructor(
         val now = LocalDateTime.now()
         filtered = when (filter) {
             WaterFilter.ALL_TIME -> filtered
-            WaterFilter.LAST_7_DAYS -> filtered.filter { ChronoUnit.DAYS.between(it.time, now) <= 7 }
-            WaterFilter.LAST_30_DAYS -> filtered.filter { ChronoUnit.DAYS.between(it.time, now) <= 30 }
+            WaterFilter.LAST_7_DAYS -> {
+                val cutoff = LocalDateTime.now().minusDays(7)
+                filtered.filter { it.time.isAfter(cutoff) }
+            }
+            WaterFilter.LAST_30_DAYS -> {
+                val cutoff = LocalDateTime.now().minusDays(30)
+                filtered.filter { it.time.isAfter(cutoff) }
+            }
+            WaterFilter.LAST_6_MONTHS -> {
+                val cutoff = LocalDateTime.now().minusMonths(6)
+                filtered.filter { it.time.isAfter(cutoff) }
+            }
+            WaterFilter.LAST_YEAR -> {
+                val cutoff = LocalDateTime.now().minusYears(1)
+                filtered.filter { it.time.isAfter(cutoff) }
+            }
         }
 
         // Sort
@@ -96,6 +112,7 @@ class WaterTrackerViewModel @Inject constructor(
                 trackerRepository.deleteWaterLog(entry)
             }
             clearSelection()
+            statReminderManager.rescheduleWater(petId)
         }
     }
 
@@ -109,6 +126,7 @@ class WaterTrackerViewModel @Inject constructor(
                 time = time
             )
             trackerRepository.insertWaterLog(entry)
+            statReminderManager.rescheduleWater(petId)
         }
     }
 }

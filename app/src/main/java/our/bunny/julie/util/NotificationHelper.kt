@@ -8,6 +8,7 @@ import android.content.Intent
 import android.os.Build
 import androidx.core.app.NotificationCompat
 import our.bunny.julie.MainActivity
+import our.bunny.julie.JulieApplication
 import our.bunny.julie.R
 
 object NotificationHelper {
@@ -50,5 +51,59 @@ object NotificationHelper {
 
         val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         notificationManager.notify(medicationId.toInt(), builder.build())
+    }
+
+    fun showWeightReminder(context: Context, petId: Long) {
+        val intent = Intent(context, MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+        }
+        val pendingIntent = PendingIntent.getActivity(context, petId.toInt(), intent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
+
+        val builder = NotificationCompat.Builder(context, JulieApplication.CHANNEL_ID_WEIGHT)
+            .setSmallIcon(android.R.drawable.ic_dialog_info)
+            .setContentTitle("Weight Reminder")
+            .setContentText("It's time to log your pet's weight.")
+            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+            .setContentIntent(pendingIntent)
+            .setAutoCancel(true)
+
+        val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        notificationManager.notify("weight".hashCode(), builder.build())
+    }
+
+    fun showWaterReminder(context: Context, petId: Long) {
+        val intent = Intent(context, MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+        }
+        val pendingIntent = PendingIntent.getActivity(context, petId.toInt() + 1000, intent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
+
+        val builder = NotificationCompat.Builder(context, JulieApplication.CHANNEL_ID_WATER)
+            .setSmallIcon(android.R.drawable.ic_dialog_info)
+            .setContentTitle("Water Check-in")
+            .setContentText("Has your pet had enough water today?")
+            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+            .setContentIntent(pendingIntent)
+            .setAutoCancel(true)
+
+        val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        notificationManager.notify("water".hashCode(), builder.build())
+    }
+
+    fun showFeedingReminder(context: Context, petId: Long) {
+        val intent = Intent(context, MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+        }
+        val pendingIntent = PendingIntent.getActivity(context, petId.toInt() + 2000, intent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
+
+        val builder = NotificationCompat.Builder(context, JulieApplication.CHANNEL_ID_FEEDING)
+            .setSmallIcon(android.R.drawable.ic_dialog_info)
+            .setContentTitle("Feeding Time")
+            .setContentText("Time to feed your pet.")
+            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+            .setContentIntent(pendingIntent)
+            .setAutoCancel(true)
+
+        val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        notificationManager.notify("feeding".hashCode(), builder.build())
     }
 }

@@ -36,6 +36,10 @@ class SettingsRepository @Inject constructor(
         val REMINDERS_WATER = booleanPreferencesKey("reminders_water")
         val REMINDERS_FEEDING = booleanPreferencesKey("reminders_feeding")
         val REMINDERS_MEDICATION = booleanPreferencesKey("reminders_medication")
+        val QUIET_HOURS_ENABLED = booleanPreferencesKey("quiet_hours_enabled")
+        val REMINDERS_WEIGHT_INTERVAL_DAYS = androidx.datastore.preferences.core.intPreferencesKey("reminders_weight_interval_days")
+        val REMINDERS_WATER_INTERVAL_HOURS = androidx.datastore.preferences.core.intPreferencesKey("reminders_water_interval_hours")
+        val REMINDERS_FEEDING_TIMES = androidx.datastore.preferences.core.stringSetPreferencesKey("reminders_feeding_times")
     }
 
     val weightUnitFlow: Flow<WeightUnit> = context.dataStore.data.map { preferences ->
@@ -175,6 +179,46 @@ class SettingsRepository @Inject constructor(
     suspend fun updateRemindersMedication(enabled: Boolean) {
         context.dataStore.edit { preferences ->
             preferences[PreferencesKeys.REMINDERS_MEDICATION] = enabled
+        }
+    }
+
+    val quietHoursEnabledFlow: Flow<Boolean> = context.dataStore.data.map { preferences ->
+        preferences[PreferencesKeys.QUIET_HOURS_ENABLED] ?: true
+    }
+
+    val remindersWeightIntervalDaysFlow: Flow<Int> = context.dataStore.data.map { preferences ->
+        preferences[PreferencesKeys.REMINDERS_WEIGHT_INTERVAL_DAYS] ?: 1
+    }
+
+    val remindersWaterIntervalHoursFlow: Flow<Int> = context.dataStore.data.map { preferences ->
+        preferences[PreferencesKeys.REMINDERS_WATER_INTERVAL_HOURS] ?: 4
+    }
+
+    val remindersFeedingTimesFlow: Flow<Set<String>> = context.dataStore.data.map { preferences ->
+        preferences[PreferencesKeys.REMINDERS_FEEDING_TIMES] ?: setOf("08:00", "19:00")
+    }
+
+    suspend fun updateQuietHoursEnabled(enabled: Boolean) {
+        context.dataStore.edit { preferences ->
+            preferences[PreferencesKeys.QUIET_HOURS_ENABLED] = enabled
+        }
+    }
+
+    suspend fun updateRemindersWeightIntervalDays(days: Int) {
+        context.dataStore.edit { preferences ->
+            preferences[PreferencesKeys.REMINDERS_WEIGHT_INTERVAL_DAYS] = days
+        }
+    }
+
+    suspend fun updateRemindersWaterIntervalHours(hours: Int) {
+        context.dataStore.edit { preferences ->
+            preferences[PreferencesKeys.REMINDERS_WATER_INTERVAL_HOURS] = hours
+        }
+    }
+
+    suspend fun updateRemindersFeedingTimes(times: Set<String>) {
+        context.dataStore.edit { preferences ->
+            preferences[PreferencesKeys.REMINDERS_FEEDING_TIMES] = times
         }
     }
 }

@@ -15,6 +15,8 @@ import our.bunny.julie.util.WaterUnit
 import our.bunny.julie.util.WeightUnit
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.Delete
+import android.app.TimePickerDialog
 
 import android.Manifest
 import android.app.AlarmManager
@@ -283,11 +285,47 @@ fun SettingsScreen(
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text("Quiet Hours", style = MaterialTheme.typography.bodyLarge)
+                                Text("Suppress reminders between 10 PM and 7 AM", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
+                            Switch(
+                                checked = notificationUiState.quietHoursEnabled,
+                                onCheckedChange = { notificationViewModel.updateQuietHoursEnabled(it) }
+                            )
+                        }
+
+                        HorizontalDivider()
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
                             Text("Weight Reminders", style = MaterialTheme.typography.bodyLarge)
                             Switch(
                                 checked = notificationUiState.remindersWeight,
                                 onCheckedChange = { notificationViewModel.updateRemindersWeight(it) }
                             )
+                        }
+                        
+                        AnimatedVisibility(visible = notificationUiState.remindersWeight) {
+                            Column(modifier = Modifier.padding(start = 16.dp, top = 8.dp, bottom = 8.dp)) {
+                                Text("Recurrence", style = MaterialTheme.typography.labelLarge)
+                                Spacer(modifier = Modifier.height(4.dp))
+                                SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
+                                    val options = listOf(1 to "Daily", 3 to "Every 3 Days", 7 to "Weekly")
+                                    options.forEachIndexed { index, (days, label) ->
+                                        SegmentedButton(
+                                            selected = notificationUiState.remindersWeightIntervalDays == days,
+                                            onClick = { notificationViewModel.updateRemindersWeightIntervalDays(days) },
+                                            shape = SegmentedButtonDefaults.itemShape(index = index, count = options.size)
+                                        ) {
+                                            Text(label, style = MaterialTheme.typography.bodySmall)
+                                        }
+                                    }
+                                }
+                            }
                         }
 
                         Row(
@@ -301,6 +339,18 @@ fun SettingsScreen(
                                 onCheckedChange = { notificationViewModel.updateRemindersWater(it) }
                             )
                         }
+                        
+                        AnimatedVisibility(visible = notificationUiState.remindersWater) {
+                            Column(modifier = Modifier.padding(start = 16.dp, top = 8.dp, bottom = 8.dp)) {
+                                Text("Check-in Frequency: Every ${notificationUiState.remindersWaterIntervalHours} hours", style = MaterialTheme.typography.labelLarge)
+                                Slider(
+                                    value = notificationUiState.remindersWaterIntervalHours.toFloat(),
+                                    onValueChange = { notificationViewModel.updateRemindersWaterIntervalHours(it.toInt()) },
+                                    valueRange = 1f..12f,
+                                    steps = 10
+                                )
+                            }
+                        }
 
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -312,6 +362,39 @@ fun SettingsScreen(
                                 checked = notificationUiState.remindersFeeding,
                                 onCheckedChange = { notificationViewModel.updateRemindersFeeding(it) }
                             )
+                        }
+
+                        AnimatedVisibility(visible = notificationUiState.remindersFeeding) {
+                            Column(modifier = Modifier.padding(start = 16.dp, top = 8.dp, bottom = 8.dp)) {
+                                Text("Scheduled Times", style = MaterialTheme.typography.labelLarge)
+                                Spacer(modifier = Modifier.height(4.dp))
+                                notificationUiState.remindersFeedingTimes.sorted().forEach { time ->
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Text(time)
+                                        IconButton(onClick = { 
+                                            notificationViewModel.updateRemindersFeedingTimes(notificationUiState.remindersFeedingTimes - time) 
+                                        }) {
+                                            Icon(Icons.Default.Delete, contentDescription = "Remove")
+                                        }
+                                    }
+                                }
+                                TextButton(onClick = {
+                                    TimePickerDialog(
+                                        context,
+                                        { _, hourOfDay, minute ->
+                                            val newTime = String.format("%02d:%02d", hourOfDay, minute)
+                                            notificationViewModel.updateRemindersFeedingTimes(notificationUiState.remindersFeedingTimes + newTime)
+                                        },
+                                        8, 0, false
+                                    ).show()
+                                }) {
+                                    Text("Add Time")
+                                }
+                            }
                         }
 
                         Row(

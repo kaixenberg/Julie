@@ -16,6 +16,7 @@ import our.bunny.julie.domain.repository.TrackerRepository
 import our.bunny.julie.util.SearchUtil
 import java.time.LocalDateTime
 import javax.inject.Inject
+import our.bunny.julie.manager.StatReminderManager
 
 enum class FeedingLogSort { DATE_NEWEST, DATE_OLDEST, CALORIES_HIGH, CALORIES_LOW }
 enum class FeedingLogFilter { ALL, BREAKFAST, LUNCH, DINNER, SNACK, CUSTOM }
@@ -28,7 +29,8 @@ data class FeedingLogUiState(
 @HiltViewModel
 class FeedingLogViewModel @Inject constructor(
     private val savedStateHandle: SavedStateHandle,
-    private val trackerRepository: TrackerRepository
+    private val trackerRepository: TrackerRepository,
+    private val statReminderManager: StatReminderManager
 ) : ViewModel() {
 
     val petId: Long = savedStateHandle.get<Long>("petId") ?: -1L
@@ -97,6 +99,7 @@ class FeedingLogViewModel @Inject constructor(
                 trackerRepository.deleteFeedingLog(entry)
             }
             clearSelection()
+            statReminderManager.rescheduleFeeding(petId)
         }
     }
 
@@ -114,12 +117,14 @@ class FeedingLogViewModel @Inject constructor(
                 type = type
             )
             trackerRepository.insertFeedingLog(entry)
+            statReminderManager.rescheduleFeeding(petId)
         }
     }
 
     fun deleteFeedingEntry(entry: FeedingLog) {
         viewModelScope.launch {
             trackerRepository.deleteFeedingLog(entry)
+            statReminderManager.rescheduleFeeding(petId)
         }
     }
 }
