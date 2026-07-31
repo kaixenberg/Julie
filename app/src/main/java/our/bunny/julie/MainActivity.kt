@@ -90,6 +90,24 @@ class MainActivity : ComponentActivity() {
                                 }
                             )
                         }
+                        
+                        val context = androidx.compose.ui.platform.LocalContext.current
+                        val activity = context as? androidx.activity.ComponentActivity
+                        val callback = androidx.compose.runtime.remember(navController) {
+                            object : androidx.activity.OnBackPressedCallback(true) {
+                                override fun handleOnBackPressed() {
+                                    if (!navController.navigateUp()) {
+                                        activity?.finish()
+                                    }
+                                }
+                            }
+                        }
+                        
+                        androidx.compose.runtime.DisposableEffect(predictiveBack, navController, activity) {
+                            callback.isEnabled = !predictiveBack
+                            activity?.onBackPressedDispatcher?.addCallback(callback)
+                            onDispose { callback.remove() }
+                        }
                     }
                 }
                 }

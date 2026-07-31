@@ -21,6 +21,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.layout.width
 import androidx.navigation.NavController
@@ -40,6 +41,11 @@ fun JulieAppDrawer(
     val coroutineScope = rememberCoroutineScope()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
+
+    val isBlurEnabled = our.bunny.julie.ui.theme.LocalBlurEnabled.current
+    val blurRadius by androidx.compose.animation.core.animateDpAsState(
+        targetValue = if (drawerState.targetValue == androidx.compose.material3.DrawerValue.Open && isBlurEnabled) 16.dp else 0.dp
+    )
 
     ModalNavigationDrawer(
         drawerState = drawerState,
@@ -121,6 +127,12 @@ fun JulieAppDrawer(
                 )
             }
         },
-        content = content
+        content = {
+            androidx.compose.foundation.layout.Box(
+                modifier = Modifier.blur(blurRadius)
+            ) {
+                content()
+            }
+        }
     )
 }
