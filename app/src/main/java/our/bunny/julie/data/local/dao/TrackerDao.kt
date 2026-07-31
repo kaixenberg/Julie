@@ -65,6 +65,10 @@ interface TrackerDao {
     @Query("SELECT * FROM medications WHERE petId = :petId")
     fun getMedicationsForPet(petId: Long): Flow<List<MedicationWithSchedules>>
 
+    @Transaction
+    @Query("SELECT * FROM medications")
+    suspend fun getAllMedications(): List<MedicationWithSchedules>
+
     @Delete
     suspend fun deleteMedication(medication: MedicationEntity)
 }

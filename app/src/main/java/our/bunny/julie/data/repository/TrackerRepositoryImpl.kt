@@ -79,6 +79,10 @@ class TrackerRepositoryImpl(
         }
     }
 
+    override suspend fun getAllMedications(): List<Medication> {
+        return dao.getAllMedications().map { it.toDomainModel() }
+    }
+
     override suspend fun insertMedication(medication: Medication): Long {
         val medicationId = if (medication.id == 0L) {
             dao.insertMedication(MedicationEntity.fromDomainModel(medication))

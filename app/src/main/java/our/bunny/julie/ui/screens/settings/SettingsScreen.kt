@@ -17,6 +17,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 
 import android.Manifest
+import android.app.AlarmManager
 import android.content.Intent
 import android.os.Build
 import android.provider.Settings
@@ -39,6 +40,7 @@ fun SettingsScreen(
     val notificationUiState by notificationViewModel.uiState.collectAsState()
     
     val context = LocalContext.current
+    val alarmManager = context.getSystemService(android.content.Context.ALARM_SERVICE) as AlarmManager
     
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -320,7 +322,16 @@ fun SettingsScreen(
                             Text("Medication Reminders", style = MaterialTheme.typography.bodyLarge)
                             Switch(
                                 checked = notificationUiState.remindersMedication,
-                                onCheckedChange = { notificationViewModel.updateRemindersMedication(it) }
+                                onCheckedChange = { enabled ->
+                                    if (enabled && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !alarmManager.canScheduleExactAlarms()) {
+                                        val intent = Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM).apply {
+                                            putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
+                                        }
+                                        context.startActivity(intent)
+                                    } else {
+                                        notificationViewModel.updateRemindersMedication(enabled)
+                                    }
+                                }
                             )
                         }
 

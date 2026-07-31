@@ -17,6 +17,7 @@ import our.bunny.julie.data.local.entity.MedicationWithSchedules
 import our.bunny.julie.domain.repository.TrackerRepository
 import our.bunny.julie.util.ReminderManager
 import our.bunny.julie.util.SearchUtil
+import our.bunny.julie.manager.MedicationReminderManager
 import javax.inject.Inject
 
 enum class MedicationSort { FREQ_MOST, FREQ_LEAST, NAME_A_Z, NAME_Z_A }
@@ -26,11 +27,11 @@ data class MedicationListUiState(
     val medications: List<Medication> = emptyList(),
     val isLoading: Boolean = false
 )
-
 @HiltViewModel
 class MedicationListViewModel @Inject constructor(
     private val savedStateHandle: SavedStateHandle,
     private val trackerRepository: TrackerRepository,
+    private val medicationReminderManager: MedicationReminderManager,
     application: Application
 ) : AndroidViewModel(application) {
 
@@ -106,8 +107,8 @@ class MedicationListViewModel @Inject constructor(
             val toDelete = medications.filter { selectedIds.value.contains(it.id) }
             toDelete.forEach { med ->
                 trackerRepository.deleteMedication(med)
-                ReminderManager.cancelMedicationReminder(getApplication(), med.id)
             }
+            medicationReminderManager.rescheduleAll()
             clearSelection()
         }
     }
@@ -125,7 +126,7 @@ class MedicationListViewModel @Inject constructor(
                 schedules = schedules
             )
             val medId = trackerRepository.insertMedication(med)
-            ReminderManager.scheduleMedicationReminder(getApplication(), med.copy(id = medId))
+            medicationReminderManager.rescheduleAll()
         }
     }
 
@@ -133,14 +134,14 @@ class MedicationListViewModel @Inject constructor(
         viewModelScope.launch {
             val updatedMed = medication.copy(isActive = !medication.isActive)
             trackerRepository.insertMedication(updatedMed)
-            ReminderManager.scheduleMedicationReminder(getApplication(), updatedMed)
+            medicationReminderManager.rescheduleAll()
         }
     }
 
     fun deleteMedication(medication: Medication) {
         viewModelScope.launch {
             trackerRepository.deleteMedication(medication)
-            ReminderManager.cancelMedicationReminder(getApplication(), medication.id)
+            medicationReminderManager.rescheduleAll()
         }
     }
 }

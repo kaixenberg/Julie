@@ -24,6 +24,7 @@ interface TrackerRepository {
     suspend fun deleteWaterLog(log: WaterLog)
 
     fun getMedicationsForPet(petId: Long): Flow<List<Medication>>
+    suspend fun getAllMedications(): List<Medication>
     suspend fun insertMedication(medication: Medication): Long
     suspend fun deleteMedication(medication: Medication)
 

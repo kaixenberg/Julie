@@ -8,6 +8,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import our.bunny.julie.manager.MedicationReminderManager
 import our.bunny.julie.domain.repository.SettingsRepository
 import javax.inject.Inject
 
@@ -21,7 +22,8 @@ data class NotificationSettingsUiState(
 
 @HiltViewModel
 class NotificationSettingsViewModel @Inject constructor(
-    private val settingsRepository: SettingsRepository
+    private val settingsRepository: SettingsRepository,
+    private val medicationReminderManager: MedicationReminderManager
 ) : ViewModel() {
 
     val uiState: StateFlow<NotificationSettingsUiState> = combine(
@@ -47,6 +49,7 @@ class NotificationSettingsViewModel @Inject constructor(
     fun updateNotificationsEnabled(enabled: Boolean) {
         viewModelScope.launch {
             settingsRepository.updateNotificationsEnabled(enabled)
+            medicationReminderManager.rescheduleAll()
         }
     }
 
@@ -71,6 +74,7 @@ class NotificationSettingsViewModel @Inject constructor(
     fun updateRemindersMedication(enabled: Boolean) {
         viewModelScope.launch {
             settingsRepository.updateRemindersMedication(enabled)
+            medicationReminderManager.rescheduleAll()
         }
     }
 }
