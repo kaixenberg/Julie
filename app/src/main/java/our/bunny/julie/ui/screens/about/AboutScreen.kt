@@ -7,6 +7,8 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -136,13 +138,26 @@ fun AboutScreen(
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     // Try to get ic_launcher
-                    Image(
-                        painter = painterResource(id = R.mipmap.ic_launcher_foreground),
-                        contentDescription = "App Icon",
+                    Box(
                         modifier = Modifier
                             .size(72.dp)
-                            .clickable { handleIconTap() }
-                    )
+                            .clip(CircleShape)
+                            .clickable { handleIconTap() },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Image(
+                            painter = painterResource(id = R.mipmap.ic_launcher_background),
+                            contentDescription = null,
+                            modifier = Modifier.fillMaxSize(),
+                            contentScale = ContentScale.Crop
+                        )
+                        Image(
+                            painter = painterResource(id = R.mipmap.ic_launcher_foreground),
+                            contentDescription = "App Icon",
+                            modifier = Modifier.fillMaxSize(),
+                            contentScale = ContentScale.Crop
+                        )
+                    }
                     
                     Spacer(modifier = Modifier.height(16.dp))
                     Text("Julie", style = MaterialTheme.typography.headlineMedium)
