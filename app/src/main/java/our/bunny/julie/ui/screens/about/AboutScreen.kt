@@ -136,25 +136,13 @@ fun AboutScreen(
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     // Try to get ic_launcher
-                    val iconRes = context.resources.getIdentifier("ic_launcher", "mipmap", context.packageName)
-                    if (iconRes != 0) {
-                        Image(
-                            painter = painterResource(id = iconRes),
-                            contentDescription = "App Icon",
-                            modifier = Modifier
-                                .size(72.dp)
-                                .clickable { handleIconTap() }
-                        )
-                    } else {
-                        Icon(
-                            imageVector = Icons.Default.Info,
-                            contentDescription = "App Icon",
-                            modifier = Modifier
-                                .size(72.dp)
-                                .clickable { handleIconTap() },
-                            tint = MaterialTheme.colorScheme.primary
-                        )
-                    }
+                    Image(
+                        painter = painterResource(id = R.mipmap.ic_launcher_foreground),
+                        contentDescription = "App Icon",
+                        modifier = Modifier
+                            .size(72.dp)
+                            .clickable { handleIconTap() }
+                    )
                     
                     Spacer(modifier = Modifier.height(16.dp))
                     Text("Julie", style = MaterialTheme.typography.headlineMedium)
