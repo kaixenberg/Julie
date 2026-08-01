@@ -141,7 +141,7 @@ fun AboutScreen(
                     Box(
                         modifier = Modifier
                             .size(72.dp)
-                            .clip(CircleShape)
+                            .clip(androidx.compose.foundation.shape.RoundedCornerShape(16.dp))
                             .clickable { handleIconTap() },
                         contentAlignment = Alignment.Center
                     ) {
