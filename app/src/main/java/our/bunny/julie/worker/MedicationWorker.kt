@@ -11,7 +11,8 @@ import our.bunny.julie.util.NotificationHelper
 @HiltWorker
 class MedicationWorker @AssistedInject constructor(
     @Assisted private val context: Context,
-    @Assisted workerParams: WorkerParameters
+    @Assisted workerParams: WorkerParameters,
+    private val petRepository: our.bunny.julie.domain.repository.PetRepository
 ) : CoroutineWorker(context, workerParams) {
 
     override suspend fun doWork(): Result {
@@ -21,7 +22,12 @@ class MedicationWorker @AssistedInject constructor(
         val dosage = inputData.getString("dosage") ?: return Result.failure()
 
         NotificationHelper.createNotificationChannel(context)
-        NotificationHelper.showMedicationReminder(context, medicationId, medicationName, dosage, petId)
+        
+        val pet = petRepository.getPetById(petId)
+        val petName = pet?.name ?: "Pet"
+        val speciesEmoji = pet?.species?.let { our.bunny.julie.ui.screens.pet.PetData.getEmojiForSpecies(it) } ?: "🐾"
+        
+        NotificationHelper.showMedicationReminder(context, medicationId, medicationName, dosage, petId, petName, speciesEmoji)
 
         return Result.success()
     }

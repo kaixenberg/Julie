@@ -18,7 +18,8 @@ class FeedingReminderWorker @AssistedInject constructor(
     @Assisted private val context: Context,
     @Assisted params: WorkerParameters,
     private val trackerRepository: TrackerRepository,
-    private val statReminderManager: StatReminderManager
+    private val statReminderManager: StatReminderManager,
+    private val petRepository: our.bunny.julie.domain.repository.PetRepository
 ) : CoroutineWorker(context, params) {
 
     override suspend fun doWork(): Result {
@@ -37,7 +38,10 @@ class FeedingReminderWorker @AssistedInject constructor(
         }
 
         if (!shouldSuppress) {
-            NotificationHelper.showFeedingReminder(context, petId)
+            val pet = petRepository.getPetById(petId)
+            val petName = pet?.name ?: "Pet"
+            val speciesEmoji = pet?.species?.let { our.bunny.julie.ui.screens.pet.PetData.getEmojiForSpecies(it) } ?: "🐾"
+            NotificationHelper.showFeedingReminder(context, petId, petName, speciesEmoji)
         }
 
         statReminderManager.rescheduleFeeding(petId)

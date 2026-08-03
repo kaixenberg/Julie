@@ -20,7 +20,8 @@ class WeightReminderWorker @AssistedInject constructor(
     @Assisted params: WorkerParameters,
     private val trackerRepository: TrackerRepository,
     private val settingsRepository: SettingsRepository,
-    private val statReminderManager: StatReminderManager
+    private val statReminderManager: StatReminderManager,
+    private val petRepository: our.bunny.julie.domain.repository.PetRepository
 ) : CoroutineWorker(context, params) {
 
     override suspend fun doWork(): Result {
@@ -43,7 +44,10 @@ class WeightReminderWorker @AssistedInject constructor(
         }
 
         if (!shouldSuppress) {
-            NotificationHelper.showWeightReminder(context, petId)
+            val pet = petRepository.getPetById(petId)
+            val petName = pet?.name ?: "Pet"
+            val speciesEmoji = pet?.species?.let { our.bunny.julie.ui.screens.pet.PetData.getEmojiForSpecies(it) } ?: "🐾"
+            NotificationHelper.showWeightReminder(context, petId, petName, speciesEmoji)
         }
 
         statReminderManager.rescheduleWeight(petId)
