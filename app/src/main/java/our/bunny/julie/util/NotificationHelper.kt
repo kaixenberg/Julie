@@ -25,7 +25,7 @@ object NotificationHelper {
         )
 
         val builder = NotificationCompat.Builder(context, JulieApplication.CHANNEL_ID_MEDICATION)
-            .setSmallIcon(R.mipmap.ic_launcher_monochrome)
+            .setSmallIcon(R.drawable.ic_notification)
             .setContentTitle("$speciesEmoji $petName: $medicationName due")
             .setContentText("Give $dosage to your pet now.")
             .setPriority(NotificationCompat.PRIORITY_HIGH)
@@ -43,7 +43,7 @@ object NotificationHelper {
         val pendingIntent = PendingIntent.getActivity(context, petId.toInt(), intent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
 
         val builder = NotificationCompat.Builder(context, JulieApplication.CHANNEL_ID_WEIGHT)
-            .setSmallIcon(R.mipmap.ic_launcher_monochrome)
+            .setSmallIcon(R.drawable.ic_notification)
             .setContentTitle("$speciesEmoji $petName: Weight Reminder")
             .setContentText("It's time to log your pet's weight.")
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
@@ -61,7 +61,7 @@ object NotificationHelper {
         val pendingIntent = PendingIntent.getActivity(context, petId.toInt() + 1000, intent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
 
         val builder = NotificationCompat.Builder(context, JulieApplication.CHANNEL_ID_WATER)
-            .setSmallIcon(R.mipmap.ic_launcher_monochrome)
+            .setSmallIcon(R.drawable.ic_notification)
             .setContentTitle("$speciesEmoji $petName: Water Check-in")
             .setContentText("Has your pet had enough water today?")
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
@@ -79,7 +79,7 @@ object NotificationHelper {
         val pendingIntent = PendingIntent.getActivity(context, petId.toInt() + 2000, intent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
 
         val builder = NotificationCompat.Builder(context, JulieApplication.CHANNEL_ID_FEEDING)
-            .setSmallIcon(R.mipmap.ic_launcher_monochrome)
+            .setSmallIcon(R.drawable.ic_notification)
             .setContentTitle("$speciesEmoji $petName: Feeding Time")
             .setContentText("Time to feed your pet.")
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
