@@ -12,23 +12,6 @@ import our.bunny.julie.JulieApplication
 import our.bunny.julie.R
 
 object NotificationHelper {
-    private const val MEDICATION_CHANNEL_ID = "medication_reminders"
-    private const val MEDICATION_CHANNEL_NAME = "Medication Reminders"
-    
-    fun createNotificationChannel(context: Context) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(
-                MEDICATION_CHANNEL_ID,
-                MEDICATION_CHANNEL_NAME,
-                NotificationManager.IMPORTANCE_HIGH
-            ).apply {
-                description = "Reminders to give your pet their medication"
-            }
-            val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-            notificationManager.createNotificationChannel(channel)
-        }
-    }
-
     fun showMedicationReminder(context: Context, medicationId: Long, medicationName: String, dosage: String, petId: Long, petName: String, speciesEmoji: String) {
         val intent = Intent(context, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
@@ -41,7 +24,7 @@ object NotificationHelper {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        val builder = NotificationCompat.Builder(context, MEDICATION_CHANNEL_ID)
+        val builder = NotificationCompat.Builder(context, JulieApplication.CHANNEL_ID_MEDICATION)
             .setSmallIcon(R.mipmap.ic_launcher_monochrome)
             .setContentTitle("$speciesEmoji $petName: $medicationName due")
             .setContentText("Give $dosage to your pet now.")

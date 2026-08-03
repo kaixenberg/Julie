@@ -20,8 +20,6 @@ class MedicationWorker @AssistedInject constructor(
         val petId = inputData.getLong("petId", -1L)
         val medicationName = inputData.getString("medicationName") ?: return Result.failure()
         val dosage = inputData.getString("dosage") ?: return Result.failure()
-
-        NotificationHelper.createNotificationChannel(context)
         
         val pet = petRepository.getPetById(petId)
         val petName = pet?.name ?: "Pet"
