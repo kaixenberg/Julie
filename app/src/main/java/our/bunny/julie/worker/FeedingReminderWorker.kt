@@ -26,23 +26,10 @@ class FeedingReminderWorker @AssistedInject constructor(
         val petId = inputData.getLong("petId", -1L)
         if (petId == -1L) return Result.failure()
 
-        val latestLog = trackerRepository.getLatestFeedingLog(petId).first()
-
-        var shouldSuppress = false
-        if (latestLog != null) {
-            val lastLogTime = latestLog.time
-            val cutoff = LocalDateTime.now().minusHours(2)
-            if (lastLogTime.isAfter(cutoff)) {
-                shouldSuppress = true
-            }
-        }
-
-        if (!shouldSuppress) {
-            val pet = petRepository.getPetById(petId)
-            val petName = pet?.name ?: "Pet"
-            val speciesEmoji = pet?.species?.let { our.bunny.julie.ui.screens.pet.PetData.getEmojiForSpecies(it) } ?: "🐾"
-            NotificationHelper.showFeedingReminder(context, petId, petName, speciesEmoji)
-        }
+        val pet = petRepository.getPetById(petId)
+        val petName = pet?.name ?: "Pet"
+        val speciesEmoji = pet?.species?.let { our.bunny.julie.ui.screens.pet.PetData.getEmojiForSpecies(it) } ?: "🐾"
+        NotificationHelper.showFeedingReminder(context, petId, petName, speciesEmoji)
 
         statReminderManager.rescheduleFeeding(petId)
 
