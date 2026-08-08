@@ -46,12 +46,13 @@ object NotificationHelper {
             .setSmallIcon(R.drawable.ic_notification)
             .setContentTitle("$speciesEmoji $petName: Weight Reminder")
             .setContentText("It's time to log your pet's weight.")
-            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setContentIntent(pendingIntent)
             .setAutoCancel(true)
 
         val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        notificationManager.notify("weight".hashCode(), builder.build())
+        val notificationId = (petId.toInt() * 10) + 1
+        notificationManager.notify(notificationId, builder.build())
     }
 
     fun showWaterReminder(context: Context, petId: Long, petName: String, speciesEmoji: String) {
@@ -64,12 +65,13 @@ object NotificationHelper {
             .setSmallIcon(R.drawable.ic_notification)
             .setContentTitle("$speciesEmoji $petName: Water Check-in")
             .setContentText("Has your pet had enough water today?")
-            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setContentIntent(pendingIntent)
             .setAutoCancel(true)
 
         val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        notificationManager.notify("water".hashCode(), builder.build())
+        val notificationId = (petId.toInt() * 10) + 2
+        notificationManager.notify(notificationId, builder.build())
     }
 
     fun showFeedingReminder(context: Context, petId: Long, petName: String, speciesEmoji: String) {
@@ -82,11 +84,12 @@ object NotificationHelper {
             .setSmallIcon(R.drawable.ic_notification)
             .setContentTitle("$speciesEmoji $petName: Feeding Time")
             .setContentText("Time to feed your pet.")
-            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setContentIntent(pendingIntent)
             .setAutoCancel(true)
 
         val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        notificationManager.notify("feeding".hashCode(), builder.build())
+        val notificationId = (petId.toInt() * 10) + 3
+        notificationManager.notify(notificationId, builder.build())
     }
 }
