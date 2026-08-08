@@ -66,7 +66,6 @@ class MedicationReminderManager @Inject constructor(
         if (schedule.daysOfWeek.isEmpty()) return
 
         val now = LocalDateTime.now()
-        val nowTruncated = now.withSecond(0).withNano(0)
         var nextAlarmTime: LocalDateTime? = null
 
         // Find the next occurrence
@@ -74,7 +73,7 @@ class MedicationReminderManager @Inject constructor(
             val candidateDate = now.plusDays(i.toLong())
             if (schedule.daysOfWeek.contains(candidateDate.dayOfWeek)) {
                 val candidateTime = candidateDate.withHour(schedule.timeOfDay.hour).withMinute(schedule.timeOfDay.minute).withSecond(0).withNano(0)
-                if (!candidateTime.isBefore(nowTruncated)) {
+                if (candidateTime.isAfter(now)) {
                     nextAlarmTime = candidateTime
                     break
                 }

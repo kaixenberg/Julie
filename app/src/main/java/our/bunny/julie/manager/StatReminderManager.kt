@@ -133,19 +133,18 @@ class StatReminderManager @Inject constructor(
 
         val template = FeedingReminderTemplate(true, quietHours, scheduledTimes)
         val now = LocalDateTime.now()
-        val nowTruncated = now.withSecond(0).withNano(0)
         var nextFireTime: LocalDateTime? = null
 
-        // Find the next scheduled time today
+        // Find the next scheduled time today that is strictly in the future
         for (time in template.scheduledTimes) {
             val candidate = LocalDateTime.of(now.toLocalDate(), time)
-            if (!candidate.isBefore(nowTruncated)) {
+            if (candidate.isAfter(now)) {
                 nextFireTime = candidate
                 break
             }
         }
 
-        // If none today, pick the first one tomorrow
+        // If no times left today, schedule for the first time tomorrow
         if (nextFireTime == null) {
             nextFireTime = LocalDateTime.of(now.toLocalDate().plusDays(1), template.scheduledTimes.first())
         }
