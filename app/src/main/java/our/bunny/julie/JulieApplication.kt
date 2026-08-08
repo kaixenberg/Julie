@@ -6,13 +6,30 @@ import android.app.NotificationManager
 import android.content.Context
 import android.os.Build
 import dagger.hilt.android.HiltAndroidApp
+import our.bunny.julie.manager.StatReminderManager
+import javax.inject.Inject
+
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 @HiltAndroidApp
 class JulieApplication : Application() {
 
+    @Inject
+    lateinit var statReminderManager: StatReminderManager
+    
+    @Inject
+    lateinit var medicationReminderManager: our.bunny.julie.manager.MedicationReminderManager
+
     override fun onCreate() {
         super.onCreate()
         createNotificationChannels()
+        statReminderManager.rescheduleAll()
+        
+        CoroutineScope(Dispatchers.IO).launch {
+            medicationReminderManager.rescheduleAll()
+        }
     }
 
     private fun createNotificationChannels() {
