@@ -16,9 +16,7 @@ import our.bunny.julie.domain.model.WeightReminderTemplate
 import our.bunny.julie.domain.repository.PetRepository
 import our.bunny.julie.domain.repository.SettingsRepository
 import our.bunny.julie.domain.repository.TrackerRepository
-import our.bunny.julie.worker.FeedingReminderWorker
-import our.bunny.julie.worker.WaterReminderWorker
-import our.bunny.julie.worker.WeightReminderWorker
+
 import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.ZoneId
@@ -50,9 +48,29 @@ class StatReminderManager @Inject constructor(
         val notificationsEnabled = settingsRepository.notificationsEnabledFlow.first()
         val weightEnabled = settingsRepository.remindersWeightFlow.first()
         
+        val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as android.app.AlarmManager
+        val intent = android.content.Intent(context, our.bunny.julie.receiver.WeightAlarmReceiver::class.java).apply {
+            putExtra(our.bunny.julie.receiver.WeightAlarmReceiver.EXTRA_PET_ID, petId)
+        }
+        val pendingIntent = android.app.PendingIntent.getBroadcast(
+            context,
+            (petId * 1000).toInt() + 2, // Unique ID for weight alarm
+            intent,
+            android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_IMMUTABLE
+        )
+
+        // Always cancel existing alarm first
+        alarmManager.cancel(pendingIntent)
+        
+        // Also cancel any old WorkManager jobs that might still be lingering
+        workManager.cancelUniqueWork("WeightReminder_$petId")
+
         if (!notificationsEnabled || !weightEnabled) {
-            workManager.cancelUniqueWork("WeightReminder_$petId")
             return
+        }
+
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S && !alarmManager.canScheduleExactAlarms()) {
+            return // Cannot schedule exact alarms without permission
         }
 
         val quietHours = settingsRepository.quietHoursEnabledFlow.first()
@@ -75,17 +93,42 @@ class StatReminderManager @Inject constructor(
 
         nextFireTime = adjustForQuietHours(nextFireTime, template.quietHoursEnabled)
 
-        val delayMillis = nextFireTime.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli() - System.currentTimeMillis()
-        scheduleWork("WeightReminder_$petId", WeightReminderWorker::class.java, delayMillis, petId)
+        val triggerTimeMillis = nextFireTime.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
+        
+        alarmManager.setExactAndAllowWhileIdle(
+            android.app.AlarmManager.RTC_WAKEUP,
+            triggerTimeMillis,
+            pendingIntent
+        )
     }
 
     suspend fun rescheduleWater(petId: Long) {
         val notificationsEnabled = settingsRepository.notificationsEnabledFlow.first()
         val waterEnabled = settingsRepository.remindersWaterFlow.first()
 
+        val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as android.app.AlarmManager
+        val intent = android.content.Intent(context, our.bunny.julie.receiver.WaterAlarmReceiver::class.java).apply {
+            putExtra(our.bunny.julie.receiver.WaterAlarmReceiver.EXTRA_PET_ID, petId)
+        }
+        val pendingIntent = android.app.PendingIntent.getBroadcast(
+            context,
+            (petId * 1000).toInt() + 3, // Unique ID for water alarm
+            intent,
+            android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_IMMUTABLE
+        )
+
+        // Always cancel existing alarm first
+        alarmManager.cancel(pendingIntent)
+        
+        // Also cancel any old WorkManager jobs that might still be lingering
+        workManager.cancelUniqueWork("WaterReminder_$petId")
+
         if (!notificationsEnabled || !waterEnabled) {
-            workManager.cancelUniqueWork("WaterReminder_$petId")
             return
+        }
+
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S && !alarmManager.canScheduleExactAlarms()) {
+            return // Cannot schedule exact alarms without permission
         }
 
         val quietHours = settingsRepository.quietHoursEnabledFlow.first()
@@ -109,8 +152,13 @@ class StatReminderManager @Inject constructor(
 
         nextFireTime = adjustForQuietHours(nextFireTime, template.quietHoursEnabled)
 
-        val delayMillis = nextFireTime.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli() - System.currentTimeMillis()
-        scheduleWork("WaterReminder_$petId", WaterReminderWorker::class.java, delayMillis, petId)
+        val triggerTimeMillis = nextFireTime.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
+        
+        alarmManager.setExactAndAllowWhileIdle(
+            android.app.AlarmManager.RTC_WAKEUP,
+            triggerTimeMillis,
+            pendingIntent
+        )
     }
 
     suspend fun rescheduleFeeding(petId: Long) {
@@ -194,17 +242,5 @@ class StatReminderManager @Inject constructor(
         }
     }
 
-    private fun scheduleWork(uniqueWorkName: String, workerClass: Class<out androidx.work.ListenableWorker>, delayMillis: Long, petId: Long) {
-        val data = Data.Builder().putLong("petId", petId).build()
-        val request = androidx.work.OneTimeWorkRequest.Builder(workerClass)
-            .setInputData(data)
-            .setInitialDelay(maxOf(delayMillis, 0L), TimeUnit.MILLISECONDS)
-            .build()
-
-        workManager.enqueueUniqueWork(
-            uniqueWorkName,
-            ExistingWorkPolicy.REPLACE,
-            request
-        )
-    }
+    // WorkManager logic completely removed
 }

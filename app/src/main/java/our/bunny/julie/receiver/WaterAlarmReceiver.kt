@@ -11,6 +11,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import our.bunny.julie.domain.repository.PetRepository
 import our.bunny.julie.domain.repository.SettingsRepository
 import our.bunny.julie.domain.repository.TrackerRepository
 import our.bunny.julie.manager.StatReminderManager
@@ -19,13 +20,13 @@ import java.time.LocalDateTime
 import javax.inject.Inject
 
 @AndroidEntryPoint
-class FeedingAlarmReceiver : BroadcastReceiver() {
+class WaterAlarmReceiver : BroadcastReceiver() {
 
     @Inject
     lateinit var reminderManager: StatReminderManager
 
     @Inject
-    lateinit var petRepository: our.bunny.julie.domain.repository.PetRepository
+    lateinit var petRepository: PetRepository
 
     @Inject
     lateinit var trackerRepository: TrackerRepository
@@ -38,7 +39,8 @@ class FeedingAlarmReceiver : BroadcastReceiver() {
         if (petId == -1L) return
 
         CoroutineScope(Dispatchers.IO).launch {
-            val latestLog = trackerRepository.getLatestFeedingLog(petId).first()
+            val logs = trackerRepository.getWaterLogsForPet(petId).first()
+            val latestLog = logs.maxByOrNull { it.time }
             val quietHoursEnabled = settingsRepository.quietHoursEnabledFlow.first()
             val now = LocalDateTime.now()
 
@@ -61,19 +63,17 @@ class FeedingAlarmReceiver : BroadcastReceiver() {
             }
 
             if (!shouldSuppress) {
-                // 3. Fetch pet details
                 val pet = petRepository.getPetById(petId)
                 val petName = pet?.name ?: "Pet"
                 val speciesEmoji = pet?.species?.let { our.bunny.julie.ui.screens.pet.PetData.getEmojiForSpecies(it) } ?: "🐾"
 
-                // 4. Show the notification if we have permission
                 if (ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED) {
-                    NotificationHelper.showFeedingReminder(context, petId, petName, speciesEmoji)
+                    NotificationHelper.showWaterReminder(context, petId, petName, speciesEmoji)
                 }
             }
 
-            // 5. Reschedule next alarms
-            reminderManager.rescheduleFeeding(petId)
+            // Always reschedule the next one
+            reminderManager.rescheduleWater(petId)
         }
     }
 

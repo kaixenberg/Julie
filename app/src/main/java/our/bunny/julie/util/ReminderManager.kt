@@ -6,7 +6,6 @@ import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import our.bunny.julie.domain.model.Medication
-import our.bunny.julie.worker.MedicationWorker
 import java.time.LocalTime
 import java.time.Duration
 import java.time.LocalDateTime
