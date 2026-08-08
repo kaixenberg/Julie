@@ -22,6 +22,8 @@ object BatteryOptimizationHelper {
         "asus",
         "meizu"
     )
+    
+    private val XIAOMI_FAMILY = setOf("xiaomi", "redmi", "poco")
 
     fun isAggressiveOem(): Boolean {
         val manufacturer = Build.MANUFACTURER.lowercase(Locale.ROOT)
@@ -33,6 +35,12 @@ object BatteryOptimizationHelper {
         }
 
         return AGGRESSIVE_OEMS.contains(manufacturer) || AGGRESSIVE_OEMS.contains(brand)
+    }
+
+    fun isXiaomiFamily(): Boolean {
+        val manufacturer = Build.MANUFACTURER.lowercase(Locale.ROOT)
+        val brand = Build.BRAND.lowercase(Locale.ROOT)
+        return XIAOMI_FAMILY.contains(manufacturer) || XIAOMI_FAMILY.contains(brand)
     }
 
     fun isIgnoringBatteryOptimizations(context: Context): Boolean {

@@ -37,6 +37,8 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import our.bunny.julie.util.BatteryOptimizationHelper
+import our.bunny.julie.util.MiuiAutostartHelper
+import our.bunny.julie.util.AutostartState
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Warning
 
@@ -64,11 +66,16 @@ fun SettingsScreen(
         mutableStateOf(BatteryOptimizationHelper.isIgnoringBatteryOptimizations(context))
     }
     
+    var miuiAutostartState by remember {
+        mutableStateOf(MiuiAutostartHelper.getAutostartState(context))
+    }
+    
     val lifecycleOwner = LocalLifecycleOwner.current
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_RESUME) {
                 isIgnoringBatteryOptimizations = BatteryOptimizationHelper.isIgnoringBatteryOptimizations(context)
+                miuiAutostartState = MiuiAutostartHelper.getAutostartState(context)
             }
         }
         lifecycleOwner.lifecycle.addObserver(observer)
@@ -80,6 +87,10 @@ fun SettingsScreen(
     val showBatteryWarning = BatteryOptimizationHelper.isAggressiveOem() && 
                              notificationUiState.notificationsEnabled && 
                              !isIgnoringBatteryOptimizations
+
+    val showMiuiAutostartWarning = BatteryOptimizationHelper.isXiaomiFamily() &&
+                                   notificationUiState.notificationsEnabled &&
+                                   miuiAutostartState == AutostartState.DISABLED
 
     LaunchedEffect(Unit) {
         backupRestoreViewModel.events.collect { event ->
@@ -197,6 +208,65 @@ fun SettingsScreen(
                         IconButton(
                             onClick = {
                                 val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://dontkillmyapp.com/"))
+                                context.startActivity(intent)
+                            }
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Info,
+                                contentDescription = "Learn More"
+                            )
+                        }
+                    }
+                }
+            }
+
+            AnimatedVisibility(visible = showMiuiAutostartWarning) {
+                Card(
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.errorContainer,
+                        contentColor = MaterialTheme.colorScheme.onErrorContainer
+                    ),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable {
+                            val intent = MiuiAutostartHelper.getAutostartSettingsIntent(context)
+                            if (intent != null) {
+                                context.startActivity(intent)
+                            } else {
+                                android.widget.Toast.makeText(context, "Please enable Autostart for Julie in App Settings", android.widget.Toast.LENGTH_LONG).show()
+                                val fallbackIntent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                                    data = Uri.parse("package:${context.packageName}")
+                                }
+                                context.startActivity(fallbackIntent)
+                            }
+                        }
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Warning,
+                            contentDescription = "Warning",
+                            modifier = Modifier.size(24.dp)
+                        )
+                        Spacer(modifier = Modifier.width(16.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "Enable MIUI Autostart",
+                                style = MaterialTheme.typography.titleSmall,
+                                fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
+                            )
+                            Text(
+                                text = "Xiaomi devices require Autostart to be enabled for background reminders.",
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                        }
+                        IconButton(
+                            onClick = {
+                                val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://dontkillmyapp.com/xiaomi"))
                                 context.startActivity(intent)
                             }
                         ) {
