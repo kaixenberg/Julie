@@ -117,9 +117,29 @@ class StatReminderManager @Inject constructor(
         val notificationsEnabled = settingsRepository.notificationsEnabledFlow.first()
         val feedingEnabled = settingsRepository.remindersFeedingFlow.first()
 
+        val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as android.app.AlarmManager
+        val intent = android.content.Intent(context, our.bunny.julie.receiver.FeedingAlarmReceiver::class.java).apply {
+            putExtra(our.bunny.julie.receiver.FeedingAlarmReceiver.EXTRA_PET_ID, petId)
+        }
+        val pendingIntent = android.app.PendingIntent.getBroadcast(
+            context,
+            (petId * 1000).toInt() + 1, // Unique ID for feeding alarm
+            intent,
+            android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_IMMUTABLE
+        )
+
+        // Always cancel existing alarm first
+        alarmManager.cancel(pendingIntent)
+        
+        // Also cancel any old WorkManager jobs that might still be lingering
+        workManager.cancelUniqueWork("FeedingReminder_$petId")
+
         if (!notificationsEnabled || !feedingEnabled) {
-            workManager.cancelUniqueWork("FeedingReminder_$petId")
             return
+        }
+
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S && !alarmManager.canScheduleExactAlarms()) {
+            return // Cannot schedule exact alarms without permission
         }
 
         val quietHours = settingsRepository.quietHoursEnabledFlow.first()
@@ -127,7 +147,6 @@ class StatReminderManager @Inject constructor(
         val scheduledTimes = timesSet.map { LocalTime.parse(it) }.sorted()
         
         if (scheduledTimes.isEmpty()) {
-            workManager.cancelUniqueWork("FeedingReminder_$petId")
             return
         }
 
@@ -150,8 +169,13 @@ class StatReminderManager @Inject constructor(
         }
 
         nextFireTime = adjustForQuietHours(nextFireTime, template.quietHoursEnabled)
-        val delayMillis = nextFireTime.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli() - System.currentTimeMillis()
-        scheduleWork("FeedingReminder_$petId", FeedingReminderWorker::class.java, delayMillis, petId)
+        val triggerTimeMillis = nextFireTime.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
+        
+        alarmManager.setExactAndAllowWhileIdle(
+            android.app.AlarmManager.RTC_WAKEUP,
+            triggerTimeMillis,
+            pendingIntent
+        )
     }
 
     private fun adjustForQuietHours(time: LocalDateTime, quietHoursEnabled: Boolean): LocalDateTime {
