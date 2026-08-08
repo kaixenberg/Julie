@@ -62,16 +62,15 @@ class StatReminderManager @Inject constructor(
         val lastEntry = trackerRepository.getLatestWeightEntry(petId).first()
 
         val now = LocalDateTime.now()
-        val lastTime = lastEntry?.date ?: now
+        var nextFireTime: LocalDateTime
         
-        var nextFireTime = lastTime.plusDays(template.intervalDays.toLong())
-        if (nextFireTime.isBefore(now)) {
-            // If the calculated next fire time is in the past (e.g. they missed it), anchor it to now.
-            // But we don't want to fire immediately if we just fired it, which the worker handles.
-            // If we're rescheduling from scratch, just schedule for now + interval to be safe, 
-            // unless we want to trigger it immediately. Let's trigger it immediately (delay 0) 
-            // and let the worker decide if it should suppress.
-            nextFireTime = now.plusMinutes(1) // small delay to allow system to settle
+        if (lastEntry == null) {
+            nextFireTime = now.plusMinutes(1)
+        } else {
+            nextFireTime = lastEntry.date.plusDays(template.intervalDays.toLong())
+            if (nextFireTime.isBefore(now)) {
+                nextFireTime = now.plusMinutes(1)
+            }
         }
 
         nextFireTime = adjustForQuietHours(nextFireTime, template.quietHoursEnabled)
@@ -93,8 +92,21 @@ class StatReminderManager @Inject constructor(
         val intervalHours = settingsRepository.remindersWaterIntervalHoursFlow.first()
         val template = WaterReminderTemplate(true, quietHours, intervalHours)
 
+        val waterLogs = trackerRepository.getWaterLogsForPet(petId).first()
+        val latestLog = waterLogs.maxByOrNull { it.time }
+
         val now = LocalDateTime.now()
-        var nextFireTime = now.plusHours(template.intervalHours.toLong())
+        var nextFireTime: LocalDateTime
+
+        if (latestLog == null) {
+            nextFireTime = now.plusMinutes(1)
+        } else {
+            nextFireTime = latestLog.time.plusHours(template.intervalHours.toLong())
+            if (nextFireTime.isBefore(now)) {
+                nextFireTime = now.plusMinutes(1)
+            }
+        }
+
         nextFireTime = adjustForQuietHours(nextFireTime, template.quietHoursEnabled)
 
         val delayMillis = nextFireTime.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli() - System.currentTimeMillis()
