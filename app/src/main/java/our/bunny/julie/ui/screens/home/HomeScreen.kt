@@ -34,14 +34,27 @@ fun HomeScreen(
 ) {
     val pets by viewModel.pets.collectAsState()
 
+    val notificationsEnabled by viewModel.notificationsEnabled.collectAsState()
+    val hasRequestedPermission by viewModel.hasRequestedNotificationPermission.collectAsState()
+    val context = androidx.compose.ui.platform.LocalContext.current
+
     // Request notification permission for Android 13+ on startup
     val permissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission()
-    ) { _ -> }
+    ) { isGranted -> 
+        if (!isGranted) {
+            viewModel.disableNotifications()
+        }
+    }
 
-    LaunchedEffect(Unit) {
+    LaunchedEffect(notificationsEnabled, hasRequestedPermission) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+            if (notificationsEnabled && !hasRequestedPermission) {
+                if (androidx.core.content.ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                    viewModel.setHasRequestedNotificationPermission(true)
+                    permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                }
+            }
         }
     }
 

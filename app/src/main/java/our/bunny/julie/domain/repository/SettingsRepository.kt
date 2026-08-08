@@ -31,6 +31,7 @@ class SettingsRepository @Inject constructor(
         val PALETTE_STYLE = stringPreferencesKey("palette_style")
         val PREDICTIVE_BACK = booleanPreferencesKey("predictive_back")
         val BLUR_EFFECTS = booleanPreferencesKey("blur_effects")
+        val HAS_REQUESTED_NOTIFICATION_PERMISSION = booleanPreferencesKey("has_requested_notification_permission")
         val NOTIFICATIONS_ENABLED = booleanPreferencesKey("notifications_enabled")
         val REMINDERS_WEIGHT = booleanPreferencesKey("reminders_weight")
         val REMINDERS_WATER = booleanPreferencesKey("reminders_water")
@@ -133,7 +134,17 @@ class SettingsRepository @Inject constructor(
     }
 
     val notificationsEnabledFlow: Flow<Boolean> = context.dataStore.data.map { preferences ->
-        preferences[PreferencesKeys.NOTIFICATIONS_ENABLED] ?: false
+        preferences[PreferencesKeys.NOTIFICATIONS_ENABLED] ?: true
+    }
+
+    val hasRequestedNotificationPermissionFlow: Flow<Boolean> = context.dataStore.data.map { preferences ->
+        preferences[PreferencesKeys.HAS_REQUESTED_NOTIFICATION_PERMISSION] ?: false
+    }
+
+    suspend fun setHasRequestedNotificationPermission(hasRequested: Boolean) {
+        context.dataStore.edit { preferences ->
+            preferences[PreferencesKeys.HAS_REQUESTED_NOTIFICATION_PERMISSION] = hasRequested
+        }
     }
 
     val remindersWeightFlow: Flow<Boolean> = context.dataStore.data.map { preferences ->

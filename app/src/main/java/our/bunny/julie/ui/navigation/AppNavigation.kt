@@ -127,6 +127,9 @@ fun AppNavigation(navController: NavHostController, onOpenDrawer: () -> Unit) {
             arguments = listOf(
                 navArgument("petId") { type = NavType.LongType },
                 navArgument("statType") { type = NavType.StringType }
+            ),
+            deepLinks = listOf(
+                androidx.navigation.navDeepLink { uriPattern = "julieapp://pet_stat_detail/{petId}/{statType}" }
             )
         ) { backStackEntry ->
             val petId = backStackEntry.arguments?.getLong("petId") ?: -1L
