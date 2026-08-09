@@ -200,18 +200,34 @@ fun AddMedicationDialog(
     var expandedType by remember { mutableStateOf(false) }
 
     // Dosage text splitting logic
-    val units = listOf("pill(s)", "capsule(s)", "drops", "ml", "mg", "g", "tsp", "tbsp")
-    val defaultUnit = "pill(s)"
+    val allUnits = listOf("pill(s)", "capsule(s)", "drops", "ml", "mg", "g", "tsp", "tbsp")
+    val availableUnits = remember(selectedType) {
+        when (selectedType) {
+            "Pill(s)" -> listOf("pill(s)", "mg")
+            "Capsule(s)" -> listOf("capsule(s)", "mg")
+            "Drops" -> listOf("drops")
+            "Liquid" -> listOf("ml", "tsp", "tbsp")
+            "Injection" -> listOf("ml", "mg")
+            "Topical/Cream" -> listOf("g", "mg")
+            else -> allUnits
+        }
+    }
     
     val initialDosageParts = editingMedication?.dosage?.split(" ", limit = 2)
     val initialDosageAmt = initialDosageParts?.getOrNull(0) ?: ""
-    val initialDosageUnit = initialDosageParts?.getOrNull(1)?.takeIf { units.contains(it) } ?: defaultUnit
+    val initialDosageUnit = initialDosageParts?.getOrNull(1)?.takeIf { allUnits.contains(it) }
     
     var dosageText by remember { mutableStateOf(initialDosageAmt) }
     var notesText by remember { mutableStateOf(editingMedication?.notes ?: "") }
     
     var expandedUnit by remember { mutableStateOf(false) }
-    var selectedUnit by remember { mutableStateOf(initialDosageUnit) }
+    var selectedUnit by remember { mutableStateOf(initialDosageUnit ?: availableUnits.first()) }
+
+    LaunchedEffect(selectedType) {
+        if (selectedUnit !in availableUnits) {
+            selectedUnit = availableUnits.first()
+        }
+    }
 
     var schedules by remember { mutableStateOf<List<MedicationSchedule>>(editingMedication?.schedules ?: emptyList()) }
     var showTimePicker by remember { mutableStateOf(false) }
@@ -359,7 +375,7 @@ fun AddMedicationDialog(
                             expanded = expandedUnit,
                             onDismissRequest = { expandedUnit = false }
                         ) {
-                            units.forEach { unit ->
+                            availableUnits.forEach { unit ->
                                 DropdownMenuItem(
                                     text = { Text(unit) },
                                     onClick = {
