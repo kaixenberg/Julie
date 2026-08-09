@@ -9,6 +9,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import our.bunny.julie.domain.model.ThemeConfig
 import our.bunny.julie.ui.theme.PaletteStyle
@@ -521,9 +522,9 @@ fun SettingsScreen(
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Column(modifier = Modifier.weight(1f)) {
+                            Column(modifier = Modifier.weight(1f).padding(end = 16.dp)) {
                                 Text("Quiet Hours", style = MaterialTheme.typography.bodyLarge)
-                                Text("Suppress reminders between 10 PM and 7 AM", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                Text("Suppress reminders between 10 PM\nand 7 AM", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             }
                             Switch(
                                 checked = notificationUiState.quietHoursEnabled,
@@ -559,7 +560,12 @@ fun SettingsScreen(
                                             onClick = { notificationViewModel.updateRemindersWeightIntervalDays(days) },
                                             shape = SegmentedButtonDefaults.itemShape(index = index, count = options.size)
                                         ) {
-                                            Text(label, style = MaterialTheme.typography.bodySmall)
+                                            Text(
+                                                text = label, 
+                                                style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
+                                                maxLines = 1,
+                                                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                                            )
                                         }
                                     }
                                 }
