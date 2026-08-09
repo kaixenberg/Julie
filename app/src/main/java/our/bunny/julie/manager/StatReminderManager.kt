@@ -86,8 +86,8 @@ class StatReminderManager @Inject constructor(
             nextFireTime = now.plusMinutes(1)
         } else {
             nextFireTime = lastEntry.date.plusDays(template.intervalDays.toLong())
-            if (nextFireTime.isBefore(now)) {
-                nextFireTime = now.plusMinutes(1)
+            while (nextFireTime.isBefore(now)) {
+                nextFireTime = nextFireTime.plusDays(template.intervalDays.toLong())
             }
         }
 
@@ -145,8 +145,8 @@ class StatReminderManager @Inject constructor(
             nextFireTime = now.plusMinutes(1)
         } else {
             nextFireTime = latestLog.time.plusHours(template.intervalHours.toLong())
-            if (nextFireTime.isBefore(now)) {
-                nextFireTime = now.plusMinutes(1)
+            while (nextFireTime.isBefore(now)) {
+                nextFireTime = nextFireTime.plusHours(template.intervalHours.toLong())
             }
         }
 
