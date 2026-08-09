@@ -550,7 +550,7 @@ fun SettingsScreen(
                         AnimatedVisibility(visible = notificationUiState.remindersWeight) {
                             Column(modifier = Modifier.padding(start = 16.dp, top = 8.dp, bottom = 8.dp)) {
                                 Text("Recurrence", style = MaterialTheme.typography.labelLarge)
-                                Spacer(modifier = Modifier.height(4.dp))
+                                Spacer(modifier = Modifier.height(8.dp))
                                 SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
                                     val options = listOf(1 to "Daily", 3 to "Every 3 Days", 7 to "Weekly")
                                     options.forEachIndexed { index, (days, label) ->
@@ -583,6 +583,7 @@ fun SettingsScreen(
                         AnimatedVisibility(visible = notificationUiState.remindersWater) {
                             Column(modifier = Modifier.padding(start = 16.dp, top = 8.dp, bottom = 8.dp)) {
                                 Text("Check-in Frequency: Every ${notificationUiState.remindersWaterIntervalHours} hours", style = MaterialTheme.typography.labelLarge)
+                                Spacer(modifier = Modifier.height(8.dp))
                                 Slider(
                                     value = notificationUiState.remindersWaterIntervalHours.toFloat(),
                                     onValueChange = { notificationViewModel.updateRemindersWaterIntervalHours(it.toInt()) },
@@ -609,7 +610,7 @@ fun SettingsScreen(
                         AnimatedVisibility(visible = notificationUiState.remindersFeeding) {
                             Column(modifier = Modifier.padding(start = 16.dp, top = 8.dp, bottom = 8.dp)) {
                                 Text("Scheduled Times", style = MaterialTheme.typography.labelLarge)
-                                Spacer(modifier = Modifier.height(4.dp))
+                                Spacer(modifier = Modifier.height(8.dp))
                                 notificationUiState.remindersFeedingTimes.sorted().forEach { time ->
                                     Row(
                                         modifier = Modifier.fillMaxWidth(),

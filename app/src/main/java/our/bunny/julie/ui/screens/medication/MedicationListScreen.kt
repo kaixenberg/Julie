@@ -313,7 +313,7 @@ fun AddMedicationDialog(
             Text(if (editingMedication != null) "Edit Medication" else "Add Medication") 
         },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                 OutlinedTextField(
                     value = nameText,
                     onValueChange = { nameText = it },
@@ -355,12 +355,12 @@ fun AddMedicationDialog(
                         onValueChange = { dosageText = it },
                         label = { Text("Amount") },
                         keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Decimal),
-                        modifier = Modifier.weight(1f)
+                        modifier = Modifier.weight(0.4f)
                     )
                     ExposedDropdownMenuBox(
                         expanded = expandedUnit,
                         onExpandedChange = { expandedUnit = !expandedUnit },
-                        modifier = Modifier.weight(1f)
+                        modifier = Modifier.weight(0.6f)
                     ) {
                         OutlinedTextField(
                             value = selectedUnit,
@@ -395,7 +395,6 @@ fun AddMedicationDialog(
                     modifier = Modifier.fillMaxWidth()
                 )
 
-                Spacer(modifier = Modifier.height(8.dp))
                 Text("Schedule", style = MaterialTheme.typography.titleSmall)
                 
                 schedules.forEach { sched ->
