@@ -12,6 +12,8 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.ui.unit.dp
 import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.core.tween
 import androidx.compose.material.icons.Icons
@@ -48,31 +50,19 @@ fun AppNavigation(navController: NavHostController, onOpenDrawer: () -> Unit) {
         popExitTransition = { slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.End, tween(400)) }
     ) {
         composable(Screen.Dashboard.route) {
-            JulieAppScaffold(
-                title = "Dashboard", 
+            our.bunny.julie.ui.screens.dashboard.DashboardScreen(
+                paddingValues = PaddingValues(0.dp), // DashboardScreen will manage its own scaffold padding
                 onOpenDrawer = onOpenDrawer,
-                floatingActionButton = {
-                    androidx.compose.material3.FloatingActionButton(onClick = { navController.navigate(Screen.AddEditPet.createRoute()) }) {
-                        androidx.compose.material3.Icon(
-                            imageVector = Icons.Default.Add, 
-                            contentDescription = "Add Pet"
-                        )
-                    }
+                onNavigateToAddPet = {
+                    navController.navigate(Screen.AddEditPet.createRoute())
+                },
+                onNavigateToPetDetail = { petId ->
+                    navController.navigate(Screen.PetDetail.createRoute(petId.toString()))
+                },
+                onNavigateToPetStatDetail = { petId, statType ->
+                    navController.navigate(Screen.PetStatDetail.createRoute(petId.toString(), statType))
                 }
-            ) { innerPadding ->
-                our.bunny.julie.ui.screens.dashboard.DashboardScreen(
-                    paddingValues = innerPadding,
-                    onNavigateToAddPet = {
-                        navController.navigate(Screen.AddEditPet.createRoute())
-                    },
-                    onNavigateToPetDetail = { petId ->
-                        navController.navigate(Screen.PetDetail.createRoute(petId.toString()))
-                    },
-                    onNavigateToPetStatDetail = { petId, statType ->
-                        navController.navigate(Screen.PetStatDetail.createRoute(petId.toString(), statType))
-                    }
-                )
-            }
+            )
         }
         composable(
             route = Screen.AddEditPet.route,

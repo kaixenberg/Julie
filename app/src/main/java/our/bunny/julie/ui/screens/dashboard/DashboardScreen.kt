@@ -1,16 +1,24 @@
 package our.bunny.julie.ui.screens.dashboard
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.Pets
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -24,85 +32,151 @@ import our.bunny.julie.util.WeightUnit
 
 @Composable
 fun DashboardScreen(
-    paddingValues: PaddingValues,
+    paddingValues: PaddingValues, // Ignored, as DashboardScreen now owns its scaffold
+    onOpenDrawer: () -> Unit,
     onNavigateToAddPet: () -> Unit,
     onNavigateToPetDetail: (Long) -> Unit,
     onNavigateToPetStatDetail: (Long, our.bunny.julie.ui.navigation.StatType) -> Unit,
     viewModel: DashboardViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val searchQuery by viewModel.searchQuery.collectAsState()
+    val selectedSpecies by viewModel.selectedSpecies.collectAsState()
+    val availableSpecies by viewModel.availableSpecies.collectAsState()
+    var isSearchActive by remember { mutableStateOf(false) }
+    var isFilterExpanded by remember { mutableStateOf(false) }
 
-    if (uiState.isLoading) {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues),
-            contentAlignment = Alignment.Center
-        ) {
-            CircularProgressIndicator()
-        }
-    } else if (uiState.petsData.isEmpty()) {
-        // Zero pets empty state
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-                .padding(32.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
-        ) {
-            Icon(
-                imageVector = Icons.Default.Pets,
-                contentDescription = null,
-                modifier = Modifier.size(72.dp),
-                tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
-            )
-            Spacer(modifier = Modifier.height(24.dp))
-            Text(
-                text = "Welcome to Julie!",
-                style = MaterialTheme.typography.headlineMedium,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = "Let's get started by adding your first pet.",
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Spacer(modifier = Modifier.height(32.dp))
-            Button(
-                onClick = onNavigateToAddPet,
-                modifier = Modifier.fillMaxWidth(),
-                contentPadding = PaddingValues(16.dp)
-            ) {
-                Icon(Icons.Default.Add, contentDescription = null)
-                Spacer(modifier = Modifier.width(8.dp))
-                Text("Add Your First Pet")
+    our.bunny.julie.ui.navigation.JulieAppScaffold(
+        title = "Dashboard",
+        onOpenDrawer = onOpenDrawer,
+        isSearchActive = isSearchActive,
+        searchQuery = searchQuery,
+        onSearchQueryChange = { viewModel.searchQuery.value = it },
+        onSearchClose = {
+            isSearchActive = false
+            viewModel.searchQuery.value = ""
+        },
+        actions = {
+            IconButton(onClick = { isSearchActive = true }) {
+                Icon(Icons.Default.Search, contentDescription = "Search Pets")
+            }
+            IconButton(onClick = { isFilterExpanded = !isFilterExpanded }) {
+                Icon(Icons.Default.FilterList, contentDescription = "Filter by Species")
+            }
+        },
+        floatingActionButton = {
+            FloatingActionButton(onClick = onNavigateToAddPet) {
+                Icon(Icons.Default.Add, contentDescription = "Add Pet")
             }
         }
-    } else {
-        val listState = androidx.compose.foundation.lazy.rememberLazyListState()
-        // List of all pets
-        LazyColumn(
-            state = listState,
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues),
-            contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(24.dp)
-        ) {
-            items(uiState.petsData, key = { it.pet.id }) { petData ->
-                PetSummarySection(
-                    petData = petData,
-                    weightUnit = uiState.weightUnit,
-                    waterUnit = uiState.waterUnit,
-                    onNavigateToPetDetail = onNavigateToPetDetail,
-                    onNavigateToPetStatDetail = onNavigateToPetStatDetail
-                )
-                
-                if (uiState.petsData.size >= 3) {
-                    HorizontalDivider(modifier = Modifier.padding(top = 24.dp), color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+    ) { innerPadding ->
+        Column(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
+            AnimatedVisibility(visible = isFilterExpanded && availableSpecies.isNotEmpty()) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .horizontalScroll(rememberScrollState())
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    FilterChip(
+                        selected = selectedSpecies.isEmpty(),
+                        onClick = { viewModel.selectedSpecies.value = emptySet() },
+                        label = { Text("All") }
+                    )
+                    availableSpecies.forEach { species ->
+                        FilterChip(
+                            selected = selectedSpecies.contains(species),
+                            onClick = {
+                                val current = selectedSpecies.toMutableSet()
+                                if (current.contains(species)) current.remove(species) else current.add(species)
+                                viewModel.selectedSpecies.value = current
+                            },
+                            label = { Text(species) }
+                        )
+                    }
+                }
+            }
+
+            if (uiState.isLoading) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator()
+                }
+            } else if (!uiState.hasAnyPets) {
+                // Zero pets at all in DB empty state
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(32.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Pets,
+                        contentDescription = null,
+                        modifier = Modifier.size(72.dp),
+                        tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
+                    )
+                    Spacer(modifier = Modifier.height(24.dp))
+                    Text(
+                        text = "Welcome to Julie!",
+                        style = MaterialTheme.typography.headlineMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = "Let's get started by adding your first pet.",
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(modifier = Modifier.height(32.dp))
+                    Button(
+                        onClick = onNavigateToAddPet,
+                        modifier = Modifier.fillMaxWidth(),
+                        contentPadding = PaddingValues(16.dp)
+                    ) {
+                        Icon(Icons.Default.Add, contentDescription = null)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Add Your First Pet")
+                    }
+                }
+            } else if (uiState.petsData.isEmpty()) {
+                // Search/Filter returned no results
+                Box(
+                    modifier = Modifier.fillMaxSize().padding(32.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "No pets found matching your criteria",
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            } else {
+                val listState = androidx.compose.foundation.lazy.rememberLazyListState()
+                LazyColumn(
+                    state = listState,
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(24.dp)
+                ) {
+                    items(uiState.petsData, key = { it.pet.id }) { petData ->
+                        PetSummarySection(
+                            petData = petData,
+                            weightUnit = uiState.weightUnit,
+                            waterUnit = uiState.waterUnit,
+                            onNavigateToPetDetail = onNavigateToPetDetail,
+                            onNavigateToPetStatDetail = onNavigateToPetStatDetail
+                        )
+                        
+                        if (uiState.petsData.size >= 3) {
+                            HorizontalDivider(modifier = Modifier.padding(top = 24.dp), color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                        }
+                    }
                 }
             }
         }
