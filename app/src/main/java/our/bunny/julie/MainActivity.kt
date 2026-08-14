@@ -52,6 +52,7 @@ class MainActivity : ComponentActivity() {
                 val predictiveBack by settingsRepository.predictiveBackFlow.collectAsState(initial = true)
                 val blurEffects by settingsRepository.blurEffectsFlow.collectAsState(initial = false)
                 val useSystemFont by settingsRepository.useSystemFontFlow.collectAsState(initial = false)
+                val oledBlack by settingsRepository.oledBlackFlow.collectAsState(initial = false)
 
                 val isDark = when (themeConfig) {
                     ThemeConfig.DARK -> true
@@ -68,6 +69,7 @@ class MainActivity : ComponentActivity() {
                         dynamicColor = dynamicColor,
                         paletteStyle = paletteStyle,
                         useSystemFont = useSystemFont,
+                        oledBlack = oledBlack,
                     ) {
                     Surface(
                         modifier = Modifier.fillMaxSize(),

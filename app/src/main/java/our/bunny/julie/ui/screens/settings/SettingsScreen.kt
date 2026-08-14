@@ -380,6 +380,42 @@ fun SettingsScreen(
 
                 HorizontalDivider()
 
+                val isSystemDark = androidx.compose.foundation.isSystemInDarkTheme()
+                val isDark = when (appearanceUiState.themeConfig) {
+                    our.bunny.julie.domain.model.ThemeConfig.DARK -> true
+                    our.bunny.julie.domain.model.ThemeConfig.LIGHT -> false
+                    our.bunny.julie.domain.model.ThemeConfig.SYSTEM -> isSystemDark
+                }
+
+                // OLED Black
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .then(if (isDark) Modifier.clickable { appearanceViewModel.updateOledBlack(!appearanceUiState.oledBlack) } else Modifier),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            "OLED Black", 
+                            style = MaterialTheme.typography.titleMedium,
+                            color = if (isDark) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+                        )
+                        Text(
+                            "True black background for dark mode", 
+                            style = MaterialTheme.typography.bodyMedium, 
+                            color = if (isDark) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.38f)
+                        )
+                    }
+                    Switch(
+                        checked = appearanceUiState.oledBlack && isDark,
+                        onCheckedChange = { appearanceViewModel.updateOledBlack(it) },
+                        enabled = isDark
+                    )
+                }
+
+                HorizontalDivider()
+
                 // Predictive Back
                 Row(
                     modifier = Modifier

@@ -55,11 +55,12 @@ fun JulieTheme(
     predictiveBack: Boolean = true,
     blurEffects: Boolean = false,
     useSystemFont: Boolean = false,
+    oledBlack: Boolean = false,
     content: @Composable () -> Unit
 ) {
     val context = LocalContext.current
 
-    val colorScheme = remember(darkTheme, dynamicColor, paletteStyle, seedColor) {
+    val colorScheme = remember(darkTheme, dynamicColor, paletteStyle, seedColor, oledBlack) {
         // --- Resolve seed ARGB --------------------------------------------------
         val seedArgb: Int = when {
             // On API 27+ we can read the wallpaper's primary colour as a seed.
@@ -83,11 +84,21 @@ fun JulieTheme(
         }
 
         // --- Build palette from seed + style ------------------------------------
-        buildColorScheme(
+        val scheme = buildColorScheme(
             seedColorArgb  = seedArgb,
             isDark         = darkTheme,
             style          = effectiveStyle,
         )
+
+        if (darkTheme && oledBlack) {
+            scheme.copy(
+                background = Color.Black,
+                surface = Color.Black,
+                surfaceVariant = Color.Black,
+            )
+        } else {
+            scheme
+        }
     }
 
     MaterialTheme(

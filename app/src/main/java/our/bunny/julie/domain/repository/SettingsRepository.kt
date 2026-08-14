@@ -31,6 +31,7 @@ class SettingsRepository @Inject constructor(
         val PALETTE_STYLE = stringPreferencesKey("palette_style")
         val PREDICTIVE_BACK = booleanPreferencesKey("predictive_back")
         val USE_SYSTEM_FONT = booleanPreferencesKey("use_system_font")
+        val OLED_BLACK = booleanPreferencesKey("oled_black")
         val BLUR_EFFECTS = booleanPreferencesKey("blur_effects")
         val HAS_REQUESTED_NOTIFICATION_PERMISSION = booleanPreferencesKey("has_requested_notification_permission")
         val NOTIFICATIONS_ENABLED = booleanPreferencesKey("notifications_enabled")
@@ -104,6 +105,10 @@ class SettingsRepository @Inject constructor(
         preferences[PreferencesKeys.USE_SYSTEM_FONT] ?: false
     }
 
+    val oledBlackFlow: Flow<Boolean> = context.dataStore.data.map { preferences ->
+        preferences[PreferencesKeys.OLED_BLACK] ?: false
+    }
+
     val blurEffectsFlow: Flow<Boolean> = context.dataStore.data.map { preferences ->
         preferences[PreferencesKeys.BLUR_EFFECTS] ?: false
     }
@@ -129,6 +134,12 @@ class SettingsRepository @Inject constructor(
     suspend fun updateUseSystemFont(useSystemFont: Boolean) {
         context.dataStore.edit { preferences ->
             preferences[PreferencesKeys.USE_SYSTEM_FONT] = useSystemFont
+        }
+    }
+
+    suspend fun updateOledBlack(oledBlack: Boolean) {
+        context.dataStore.edit { preferences ->
+            preferences[PreferencesKeys.OLED_BLACK] = oledBlack
         }
     }
 
