@@ -63,9 +63,11 @@ fun JulieAppDrawer(
                     selected = currentRoute?.startsWith("dashboard") == true,
                     onClick = {
                         coroutineScope.launch { drawerState.close() }
-                        navController.navigate("dashboard") {
-                            popUpTo(navController.graph.startDestinationId)
-                            launchSingleTop = true
+                        if (currentRoute?.startsWith("dashboard") != true) {
+                            navController.navigate("dashboard") {
+                                popUpTo(navController.graph.startDestinationId)
+                                launchSingleTop = true
+                            }
                         }
                     },
                     modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
@@ -85,9 +87,11 @@ fun JulieAppDrawer(
                         selected = currentRoute?.startsWith("pet_detail/${pet.id}") == true,
                         onClick = {
                             coroutineScope.launch { drawerState.close() }
-                            navController.navigate("pet_detail/${pet.id}") {
-                                popUpTo(navController.graph.startDestinationId)
-                                launchSingleTop = true
+                            if (currentRoute?.startsWith("pet_detail/${pet.id}") != true) {
+                                navController.navigate("pet_detail/${pet.id}") {
+                                    popUpTo(navController.graph.startDestinationId)
+                                    launchSingleTop = true
+                                }
                             }
                         },
                         modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
@@ -102,9 +106,11 @@ fun JulieAppDrawer(
                     selected = currentRoute?.startsWith("add_edit_pet") == true,
                     onClick = {
                         coroutineScope.launch { drawerState.close() }
-                        navController.navigate("add_edit_pet/-1") {
-                            popUpTo(navController.graph.startDestinationId)
-                            launchSingleTop = true
+                        if (currentRoute?.startsWith("add_edit_pet") != true) {
+                            navController.navigate("add_edit_pet/-1") {
+                                popUpTo(navController.graph.startDestinationId)
+                                launchSingleTop = true
+                            }
                         }
                     },
                     modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
@@ -118,9 +124,11 @@ fun JulieAppDrawer(
                     selected = currentRoute == "settings",
                     onClick = {
                         coroutineScope.launch { drawerState.close() }
-                        navController.navigate("settings") {
-                            popUpTo(navController.graph.startDestinationId)
-                            launchSingleTop = true
+                        if (currentRoute != "settings") {
+                            navController.navigate("settings") {
+                                popUpTo(navController.graph.startDestinationId)
+                                launchSingleTop = true
+                            }
                         }
                     },
                     modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
