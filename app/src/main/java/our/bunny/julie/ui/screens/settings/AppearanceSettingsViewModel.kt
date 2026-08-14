@@ -15,8 +15,8 @@ import javax.inject.Inject
 
 data class AppearanceSettingsUiState(
     val themeConfig: ThemeConfig = ThemeConfig.SYSTEM,
-    val dynamicColor: Boolean = true,
-    val paletteStyle: PaletteStyle = PaletteStyle.TonalSpot,
+    val dynamicColor: Boolean = false,
+    val paletteStyle: PaletteStyle = PaletteStyle.Julie,
     val predictiveBack: Boolean = true,
     val blurEffects: Boolean = false
 )

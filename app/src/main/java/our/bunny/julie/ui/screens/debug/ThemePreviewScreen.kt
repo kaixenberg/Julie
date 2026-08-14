@@ -311,19 +311,20 @@ private fun ColorSwatch(label: String, color: Color, modifier: Modifier = Modifi
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun ThemePreviewScreen() {
-    var darkTheme    by remember { mutableStateOf(false) }
+    var isDark       by remember { mutableStateOf(false) }
     var dynamicColor by remember { mutableStateOf(false) }
-    var palette      by remember { mutableStateOf(PaletteStyle.TonalSpot) }
+    var palette      by remember { mutableStateOf(PaletteStyle.Julie) }
+    var blurEffects  by remember { mutableStateOf(false) }
 
     JulieTheme(
-        darkTheme    = darkTheme,
+        darkTheme    = isDark,
         dynamicColor = dynamicColor,
         paletteStyle = palette,
         seedColor    = DefaultSeedColor,
     ) {
         ThemePreviewContent(
-            darkTheme            = darkTheme,
-            onDarkThemeChange    = { darkTheme = it },
+            darkTheme            = isDark,
+            onDarkThemeChange    = { isDark = it },
             dynamicColor         = dynamicColor,
             onDynamicColorChange = { dynamicColor = it },
             paletteStyle         = palette,

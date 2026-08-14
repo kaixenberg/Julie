@@ -47,8 +47,8 @@ class MainActivity : ComponentActivity() {
             } else {
                 // Production path: params read from DataStore
                 val themeConfig by settingsRepository.themeConfigFlow.collectAsState(initial = ThemeConfig.SYSTEM)
-                val dynamicColor by settingsRepository.dynamicColorFlow.collectAsState(initial = true)
-                val paletteStyle by settingsRepository.paletteStyleFlow.collectAsState(initial = PaletteStyle.TonalSpot)
+                val dynamicColor by settingsRepository.dynamicColorFlow.collectAsState(initial = false)
+                val paletteStyle by settingsRepository.paletteStyleFlow.collectAsState(initial = PaletteStyle.Julie)
                 val predictiveBack by settingsRepository.predictiveBackFlow.collectAsState(initial = true)
                 val blurEffects by settingsRepository.blurEffectsFlow.collectAsState(initial = false)
 

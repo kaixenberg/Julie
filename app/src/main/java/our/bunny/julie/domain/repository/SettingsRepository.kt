@@ -83,15 +83,15 @@ class SettingsRepository @Inject constructor(
     }
 
     val dynamicColorFlow: Flow<Boolean> = context.dataStore.data.map { preferences ->
-        preferences[PreferencesKeys.DYNAMIC_COLOR] ?: true
+        preferences[PreferencesKeys.DYNAMIC_COLOR] ?: false
     }
 
     val paletteStyleFlow: Flow<PaletteStyle> = context.dataStore.data.map { preferences ->
-        val styleStr = preferences[PreferencesKeys.PALETTE_STYLE] ?: PaletteStyle.TonalSpot.name
+        val styleStr = preferences[PreferencesKeys.PALETTE_STYLE] ?: PaletteStyle.Julie.name
         try {
             PaletteStyle.valueOf(styleStr)
         } catch (e: Exception) {
-            PaletteStyle.TonalSpot
+            PaletteStyle.Julie
         }
     }
 

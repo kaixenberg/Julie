@@ -49,9 +49,11 @@ val ExpressiveShapes = Shapes(
 @Composable
 fun JulieTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
-    dynamicColor: Boolean = true,
-    paletteStyle: PaletteStyle = PaletteStyle.TonalSpot,
-    seedColor: Color = DefaultSeedColor,
+    dynamicColor: Boolean = false,
+    paletteStyle: PaletteStyle = PaletteStyle.Julie,
+    seedColor: Color = Color(0xFF6750A4), // Default fallback if needed
+    predictiveBack: Boolean = true,
+    blurEffects: Boolean = false,
     content: @Composable () -> Unit
 ) {
     val context = LocalContext.current

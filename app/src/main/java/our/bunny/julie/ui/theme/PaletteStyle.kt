@@ -25,7 +25,8 @@ enum class PaletteStyle {
     Expressive,  // Playful, offset hue shift — M3 Expressive default
     FruitSalad,  // Split-complementary palette
     Rainbow,     // Multiple hue sources
-    Monochrome;  // Greyscale (no chroma)
+    Monochrome,  // Greyscale (no chroma)
+    Julie;       // Julie Brand colors
 
     fun label(): String = when (this) {
         TonalSpot   -> "Tonal Spot"
@@ -35,6 +36,7 @@ enum class PaletteStyle {
         FruitSalad  -> "Fruit Salad"
         Rainbow     -> "Rainbow"
         Monochrome  -> "Monochrome"
+        Julie       -> "Julie"
     }
 }
 
@@ -52,7 +54,7 @@ fun buildColorScheme(
     style: PaletteStyle,
     contrastLevel: Double = 0.0
 ): ColorScheme {
-    val hct = Hct.fromInt(seedColorArgb)
+    val hct = if (style == PaletteStyle.Julie) Hct.fromInt(0xFF908373.toInt()) else Hct.fromInt(seedColorArgb)
     val scheme = when (style) {
         PaletteStyle.TonalSpot   -> SchemeTonalSpot(hct, isDark, contrastLevel)
         PaletteStyle.Neutral     -> SchemeNeutral(hct, isDark, contrastLevel)
@@ -61,6 +63,7 @@ fun buildColorScheme(
         PaletteStyle.FruitSalad  -> SchemeFruitSalad(hct, isDark, contrastLevel)
         PaletteStyle.Rainbow     -> SchemeRainbow(hct, isDark, contrastLevel)
         PaletteStyle.Monochrome  -> SchemeMonochrome(hct, isDark, contrastLevel)
+        PaletteStyle.Julie       -> SchemeTonalSpot(hct, isDark, contrastLevel)
     }
 
     val c = MaterialDynamicColors()
@@ -69,10 +72,10 @@ fun buildColorScheme(
 
     return if (isDark) {
         darkColorScheme(
-            primary                 = c.primary().getArgb(scheme).toComposeColor(),
-            onPrimary               = c.onPrimary().getArgb(scheme).toComposeColor(),
-            primaryContainer        = c.primaryContainer().getArgb(scheme).toComposeColor(),
-            onPrimaryContainer      = c.onPrimaryContainer().getArgb(scheme).toComposeColor(),
+            primary                 = if (style == PaletteStyle.Julie) Color(0xFF908373) else c.primary().getArgb(scheme).toComposeColor(),
+            onPrimary               = if (style == PaletteStyle.Julie) Color(0xFF2F2D21) else c.onPrimary().getArgb(scheme).toComposeColor(),
+            primaryContainer        = if (style == PaletteStyle.Julie) Color(0xFF2F2D21) else c.primaryContainer().getArgb(scheme).toComposeColor(),
+            onPrimaryContainer      = if (style == PaletteStyle.Julie) Color(0xFF908373) else c.onPrimaryContainer().getArgb(scheme).toComposeColor(),
             inversePrimary          = c.inversePrimary().getArgb(scheme).toComposeColor(),
             secondary               = c.secondary().getArgb(scheme).toComposeColor(),
             onSecondary             = c.onSecondary().getArgb(scheme).toComposeColor(),
@@ -101,10 +104,10 @@ fun buildColorScheme(
         )
     } else {
         lightColorScheme(
-            primary                 = c.primary().getArgb(scheme).toComposeColor(),
-            onPrimary               = c.onPrimary().getArgb(scheme).toComposeColor(),
-            primaryContainer        = c.primaryContainer().getArgb(scheme).toComposeColor(),
-            onPrimaryContainer      = c.onPrimaryContainer().getArgb(scheme).toComposeColor(),
+            primary                 = if (style == PaletteStyle.Julie) Color(0xFF2F2D21) else c.primary().getArgb(scheme).toComposeColor(),
+            onPrimary               = if (style == PaletteStyle.Julie) Color.White else c.onPrimary().getArgb(scheme).toComposeColor(),
+            primaryContainer        = if (style == PaletteStyle.Julie) Color(0xFF908373) else c.primaryContainer().getArgb(scheme).toComposeColor(),
+            onPrimaryContainer      = if (style == PaletteStyle.Julie) Color(0xFF2F2D21) else c.onPrimaryContainer().getArgb(scheme).toComposeColor(),
             inversePrimary          = c.inversePrimary().getArgb(scheme).toComposeColor(),
             secondary               = c.secondary().getArgb(scheme).toComposeColor(),
             onSecondary             = c.onSecondary().getArgb(scheme).toComposeColor(),
