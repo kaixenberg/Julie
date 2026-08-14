@@ -75,11 +75,17 @@ fun JulieTheme(
             else -> seedColor.toArgb()
         }
 
+        val effectiveStyle = if (dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
+            PaletteStyle.TonalSpot
+        } else {
+            paletteStyle
+        }
+
         // --- Build palette from seed + style ------------------------------------
         buildColorScheme(
             seedColorArgb  = seedArgb,
             isDark         = darkTheme,
-            style          = paletteStyle,
+            style          = effectiveStyle,
         )
     }
 

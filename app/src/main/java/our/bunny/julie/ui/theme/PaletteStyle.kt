@@ -117,9 +117,9 @@ fun buildColorScheme(
             onTertiary              = c.onTertiary().getArgb(scheme).toComposeColor(),
             tertiaryContainer       = c.tertiaryContainer().getArgb(scheme).toComposeColor(),
             onTertiaryContainer     = c.onTertiaryContainer().getArgb(scheme).toComposeColor(),
-            background              = c.background().getArgb(scheme).toComposeColor(),
+            background              = Color(0xFFFCF9F2), // Warm, creamy yellowish tint
             onBackground            = c.onBackground().getArgb(scheme).toComposeColor(),
-            surface                 = c.surface().getArgb(scheme).toComposeColor(),
+            surface                 = Color(0xFFFCF9F2), // Warm, creamy yellowish tint
             onSurface               = c.onSurface().getArgb(scheme).toComposeColor(),
             surfaceVariant          = c.surfaceVariant().getArgb(scheme).toComposeColor(),
             onSurfaceVariant        = c.onSurfaceVariant().getArgb(scheme).toComposeColor(),

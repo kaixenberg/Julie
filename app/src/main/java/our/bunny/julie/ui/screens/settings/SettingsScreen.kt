@@ -343,15 +343,16 @@ fun SettingsScreen(
                         }
                     }
                 ) {
+                    val effectiveStyle = if (appearanceUiState.dynamicColor) PaletteStyle.TonalSpot else appearanceUiState.paletteStyle
                     OutlinedTextField(
-                        value = appearanceUiState.paletteStyle.name.replace(Regex("([a-z])([A-Z]+)"), "$1 $2"),
+                        value = effectiveStyle.name.replace(Regex("([a-z])([A-Z]+)"), "$1 $2"),
                         onValueChange = {},
                         readOnly = true,
                         enabled = !appearanceUiState.dynamicColor,
                         label = { Text("Palette Style") },
                         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
                         colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors(),
-                        modifier = Modifier.menuAnchor().fillMaxWidth()
+                        modifier = Modifier.then(if (appearanceUiState.dynamicColor) Modifier else Modifier.menuAnchor()).fillMaxWidth()
                     )
                     ExposedDropdownMenu(
                         expanded = expanded,
