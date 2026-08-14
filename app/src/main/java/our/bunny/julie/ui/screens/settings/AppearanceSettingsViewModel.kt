@@ -18,7 +18,8 @@ data class AppearanceSettingsUiState(
     val dynamicColor: Boolean = false,
     val paletteStyle: PaletteStyle = PaletteStyle.Julie,
     val predictiveBack: Boolean = true,
-    val blurEffects: Boolean = false
+    val blurEffects: Boolean = false,
+    val useSystemFont: Boolean = false
 )
 
 @HiltViewModel
@@ -31,14 +32,16 @@ class AppearanceSettingsViewModel @Inject constructor(
         settingsRepository.dynamicColorFlow,
         settingsRepository.paletteStyleFlow,
         settingsRepository.predictiveBackFlow,
-        settingsRepository.blurEffectsFlow
-    ) { theme, dynamicColor, paletteStyle, predictiveBack, blurEffects ->
+        settingsRepository.blurEffectsFlow,
+        settingsRepository.useSystemFontFlow
+    ) { flowArray ->
         AppearanceSettingsUiState(
-            themeConfig = theme,
-            dynamicColor = dynamicColor,
-            paletteStyle = paletteStyle,
-            predictiveBack = predictiveBack,
-            blurEffects = blurEffects
+            themeConfig = flowArray[0] as ThemeConfig,
+            dynamicColor = flowArray[1] as Boolean,
+            paletteStyle = flowArray[2] as PaletteStyle,
+            predictiveBack = flowArray[3] as Boolean,
+            blurEffects = flowArray[4] as Boolean,
+            useSystemFont = flowArray[5] as Boolean
         )
     }.stateIn(
         scope = viewModelScope,
@@ -73,6 +76,12 @@ class AppearanceSettingsViewModel @Inject constructor(
     fun updateBlurEffects(enabled: Boolean) {
         viewModelScope.launch {
             settingsRepository.updateBlurEffects(enabled)
+        }
+    }
+
+    fun updateUseSystemFont(enabled: Boolean) {
+        viewModelScope.launch {
+            settingsRepository.updateUseSystemFont(enabled)
         }
     }
 }

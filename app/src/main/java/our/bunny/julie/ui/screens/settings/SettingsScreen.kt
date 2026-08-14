@@ -358,7 +358,7 @@ fun SettingsScreen(
                         expanded = expanded,
                         onDismissRequest = { expanded = false }
                     ) {
-                        PaletteStyle.entries.forEach { style ->
+                        PaletteStyle.entries.filter { it != PaletteStyle.TonalSpot }.forEach { style ->
                             DropdownMenuItem(
                                 text = { Text(style.name.replace(Regex("([a-z])([A-Z]+)"), "$1 $2")) },
                                 onClick = {
@@ -395,6 +395,26 @@ fun SettingsScreen(
                     Switch(
                         checked = appearanceUiState.predictiveBack,
                         onCheckedChange = { appearanceViewModel.updatePredictiveBack(it) }
+                    )
+                }
+
+                HorizontalDivider()
+
+                // System Font
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { appearanceViewModel.updateUseSystemFont(!appearanceUiState.useSystemFont) },
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text("Use System Font", style = MaterialTheme.typography.titleMedium)
+                        Text("Use device's default font instead of custom typography", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                    Switch(
+                        checked = appearanceUiState.useSystemFont,
+                        onCheckedChange = { appearanceViewModel.updateUseSystemFont(it) }
                     )
                 }
 

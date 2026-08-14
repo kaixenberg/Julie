@@ -9,13 +9,12 @@ import androidx.compose.ui.unit.sp
 import our.bunny.julie.R
 
 // ─── Font family ───────────────────────────────────────────────────────────────
-// Uses the bundled Nunito font for a friendly, rounded feel that matches the
-// M3 Expressive aesthetic perfectly for a pet health app.
-val NunitoFamily = FontFamily(
-    Font(R.font.nunito_regular, FontWeight.Normal),
-    Font(R.font.nunito_medium,  FontWeight.Medium),
-    Font(R.font.nunito_semibold, FontWeight.SemiBold),
-    Font(R.font.nunito_bold,    FontWeight.Bold),
+// Uses the bundled Baloo 2 font for a friendly, rounded feel.
+val Baloo2Family = FontFamily(
+    Font(R.font.baloo2_regular, FontWeight.Normal),
+    Font(R.font.baloo2_medium,  FontWeight.Medium),
+    Font(R.font.baloo2_semibold, FontWeight.SemiBold),
+    Font(R.font.baloo2_bold,    FontWeight.Bold),
 )
 
 // ─── M3 Expressive type scale ─────────────────────────────────────────────────
@@ -26,110 +25,129 @@ val NunitoFamily = FontFamily(
 //   • labelSmall: 11 → 10sp (tighter for dense data)
 val ExpressiveTypography = Typography(
     displayLarge = TextStyle(
-        fontFamily = NunitoFamily,
-        fontWeight = FontWeight.Normal,
+        fontFamily = Baloo2Family,
+        fontWeight = FontWeight.Bold,
         fontSize   = 57.sp,
         lineHeight = 64.sp,
         letterSpacing = (-0.25).sp,
     ),
     displayMedium = TextStyle(
-        fontFamily = NunitoFamily,
-        fontWeight = FontWeight.Normal,
+        fontFamily = Baloo2Family,
+        fontWeight = FontWeight.Bold,
         fontSize   = 45.sp,
         lineHeight = 52.sp,
         letterSpacing = 0.sp,
     ),
     displaySmall = TextStyle(
-        fontFamily = NunitoFamily,
-        fontWeight = FontWeight.Normal,
+        fontFamily = Baloo2Family,
+        fontWeight = FontWeight.Bold,
         fontSize   = 36.sp,
         lineHeight = 44.sp,
         letterSpacing = 0.sp,
     ),
     headlineLarge = TextStyle(
-        fontFamily = NunitoFamily,
-        fontWeight = FontWeight.SemiBold,
+        fontFamily = Baloo2Family,
+        fontWeight = FontWeight.Bold,
         fontSize   = 34.sp,       // +2sp Expressive bump
         lineHeight = 42.sp,
         letterSpacing = 0.sp,
     ),
     headlineMedium = TextStyle(
-        fontFamily = NunitoFamily,
-        fontWeight = FontWeight.SemiBold,
+        fontFamily = Baloo2Family,
+        fontWeight = FontWeight.Bold,
         fontSize   = 28.sp,
         lineHeight = 36.sp,
         letterSpacing = 0.sp,
     ),
     headlineSmall = TextStyle(
-        fontFamily = NunitoFamily,
-        fontWeight = FontWeight.SemiBold,
+        fontFamily = Baloo2Family,
+        fontWeight = FontWeight.Bold,
         fontSize   = 24.sp,
         lineHeight = 32.sp,
         letterSpacing = 0.sp,
     ),
     titleLarge = TextStyle(
-        fontFamily = NunitoFamily,
+        fontFamily = Baloo2Family,
         fontWeight = FontWeight.Bold,
         fontSize   = 22.sp,
         lineHeight = 28.sp,
         letterSpacing = 0.sp,
     ),
     titleMedium = TextStyle(
-        fontFamily = NunitoFamily,
-        fontWeight = FontWeight.Bold,
+        fontFamily = Baloo2Family,
+        fontWeight = FontWeight.SemiBold,
         fontSize   = 16.sp,
         lineHeight = 24.sp,
         letterSpacing = 0.15.sp,
     ),
     titleSmall = TextStyle(
-        fontFamily = NunitoFamily,
-        fontWeight = FontWeight.Bold,
+        fontFamily = Baloo2Family,
+        fontWeight = FontWeight.SemiBold,
         fontSize   = 14.sp,
         lineHeight = 20.sp,
         letterSpacing = 0.1.sp,
     ),
     bodyLarge = TextStyle(
-        fontFamily = NunitoFamily,
+        fontFamily = Baloo2Family,
         fontWeight = FontWeight.Normal,
         fontSize   = 16.sp,
         lineHeight = 24.sp,
         letterSpacing = 0.5.sp,
     ),
     bodyMedium = TextStyle(
-        fontFamily = NunitoFamily,
+        fontFamily = Baloo2Family,
         fontWeight = FontWeight.Normal,
         fontSize   = 14.sp,
         lineHeight = 20.sp,
         letterSpacing = 0.25.sp,
     ),
     bodySmall = TextStyle(
-        fontFamily = NunitoFamily,
+        fontFamily = Baloo2Family,
         fontWeight = FontWeight.Normal,
         fontSize   = 12.sp,
         lineHeight = 16.sp,
         letterSpacing = 0.4.sp,
     ),
     labelLarge = TextStyle(
-        fontFamily = NunitoFamily,
+        fontFamily = Baloo2Family,
         fontWeight = FontWeight.Medium,
         fontSize   = 14.sp,
         lineHeight = 20.sp,
         letterSpacing = 0.1.sp,
     ),
     labelMedium = TextStyle(
-        fontFamily = NunitoFamily,
+        fontFamily = Baloo2Family,
         fontWeight = FontWeight.Medium,
         fontSize   = 12.sp,
         lineHeight = 16.sp,
         letterSpacing = 0.5.sp,
     ),
     labelSmall = TextStyle(
-        fontFamily = NunitoFamily,
-        fontWeight = FontWeight.Medium,
+        fontFamily = Baloo2Family,
+        fontWeight = FontWeight.Normal,
         fontSize   = 10.sp,       // Expressive: -1sp for dense data labels
         lineHeight = 16.sp,
         letterSpacing = 0.5.sp,
     ),
+)
+
+// Define SystemTypography using the exact same metrics but FontFamily.Default
+val SystemTypography = Typography(
+    displayLarge = ExpressiveTypography.displayLarge.copy(fontFamily = FontFamily.Default),
+    displayMedium = ExpressiveTypography.displayMedium.copy(fontFamily = FontFamily.Default),
+    displaySmall = ExpressiveTypography.displaySmall.copy(fontFamily = FontFamily.Default),
+    headlineLarge = ExpressiveTypography.headlineLarge.copy(fontFamily = FontFamily.Default),
+    headlineMedium = ExpressiveTypography.headlineMedium.copy(fontFamily = FontFamily.Default),
+    headlineSmall = ExpressiveTypography.headlineSmall.copy(fontFamily = FontFamily.Default),
+    titleLarge = ExpressiveTypography.titleLarge.copy(fontFamily = FontFamily.Default),
+    titleMedium = ExpressiveTypography.titleMedium.copy(fontFamily = FontFamily.Default),
+    titleSmall = ExpressiveTypography.titleSmall.copy(fontFamily = FontFamily.Default),
+    bodyLarge = ExpressiveTypography.bodyLarge.copy(fontFamily = FontFamily.Default),
+    bodyMedium = ExpressiveTypography.bodyMedium.copy(fontFamily = FontFamily.Default),
+    bodySmall = ExpressiveTypography.bodySmall.copy(fontFamily = FontFamily.Default),
+    labelLarge = ExpressiveTypography.labelLarge.copy(fontFamily = FontFamily.Default),
+    labelMedium = ExpressiveTypography.labelMedium.copy(fontFamily = FontFamily.Default),
+    labelSmall = ExpressiveTypography.labelSmall.copy(fontFamily = FontFamily.Default),
 )
 
 // Keep the old val as an alias so any existing references still compile.

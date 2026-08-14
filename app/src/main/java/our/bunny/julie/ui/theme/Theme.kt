@@ -54,6 +54,7 @@ fun JulieTheme(
     seedColor: Color = Color(0xFF6750A4), // Default fallback if needed
     predictiveBack: Boolean = true,
     blurEffects: Boolean = false,
+    useSystemFont: Boolean = false,
     content: @Composable () -> Unit
 ) {
     val context = LocalContext.current
@@ -91,7 +92,7 @@ fun JulieTheme(
 
     MaterialTheme(
         colorScheme  = colorScheme,
-        typography   = ExpressiveTypography,
+        typography   = if (useSystemFont) SystemTypography else ExpressiveTypography,
         shapes       = ExpressiveShapes,
         motionScheme = MotionScheme.expressive(),
         content      = content,

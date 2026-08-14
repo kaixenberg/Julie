@@ -54,7 +54,7 @@ fun buildColorScheme(
     style: PaletteStyle,
     contrastLevel: Double = 0.0
 ): ColorScheme {
-    val hct = if (style == PaletteStyle.Julie) Hct.fromInt(0xFF908373.toInt()) else Hct.fromInt(seedColorArgb)
+    val hct = if (style == PaletteStyle.Julie) Hct.fromInt(0xFFA69885.toInt()) else Hct.fromInt(seedColorArgb)
     val scheme = when (style) {
         PaletteStyle.TonalSpot   -> SchemeTonalSpot(hct, isDark, contrastLevel)
         PaletteStyle.Neutral     -> SchemeNeutral(hct, isDark, contrastLevel)
@@ -72,10 +72,10 @@ fun buildColorScheme(
 
     return if (isDark) {
         darkColorScheme(
-            primary                 = if (style == PaletteStyle.Julie) Color(0xFF908373) else c.primary().getArgb(scheme).toComposeColor(),
+            primary                 = if (style == PaletteStyle.Julie) Color(0xFFA69885) else c.primary().getArgb(scheme).toComposeColor(),
             onPrimary               = if (style == PaletteStyle.Julie) Color(0xFF2F2D21) else c.onPrimary().getArgb(scheme).toComposeColor(),
             primaryContainer        = if (style == PaletteStyle.Julie) Color(0xFF2F2D21) else c.primaryContainer().getArgb(scheme).toComposeColor(),
-            onPrimaryContainer      = if (style == PaletteStyle.Julie) Color(0xFF908373) else c.onPrimaryContainer().getArgb(scheme).toComposeColor(),
+            onPrimaryContainer      = if (style == PaletteStyle.Julie) Color(0xFFA69885) else c.onPrimaryContainer().getArgb(scheme).toComposeColor(),
             inversePrimary          = c.inversePrimary().getArgb(scheme).toComposeColor(),
             secondary               = c.secondary().getArgb(scheme).toComposeColor(),
             onSecondary             = c.onSecondary().getArgb(scheme).toComposeColor(),
@@ -106,7 +106,7 @@ fun buildColorScheme(
         lightColorScheme(
             primary                 = if (style == PaletteStyle.Julie) Color(0xFF2F2D21) else c.primary().getArgb(scheme).toComposeColor(),
             onPrimary               = if (style == PaletteStyle.Julie) Color.White else c.onPrimary().getArgb(scheme).toComposeColor(),
-            primaryContainer        = if (style == PaletteStyle.Julie) Color(0xFF908373) else c.primaryContainer().getArgb(scheme).toComposeColor(),
+            primaryContainer        = if (style == PaletteStyle.Julie) Color(0xFFA69885) else c.primaryContainer().getArgb(scheme).toComposeColor(),
             onPrimaryContainer      = if (style == PaletteStyle.Julie) Color(0xFF2F2D21) else c.onPrimaryContainer().getArgb(scheme).toComposeColor(),
             inversePrimary          = c.inversePrimary().getArgb(scheme).toComposeColor(),
             secondary               = c.secondary().getArgb(scheme).toComposeColor(),

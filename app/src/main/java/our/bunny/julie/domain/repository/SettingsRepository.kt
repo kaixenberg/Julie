@@ -30,6 +30,7 @@ class SettingsRepository @Inject constructor(
         val DYNAMIC_COLOR = booleanPreferencesKey("dynamic_color")
         val PALETTE_STYLE = stringPreferencesKey("palette_style")
         val PREDICTIVE_BACK = booleanPreferencesKey("predictive_back")
+        val USE_SYSTEM_FONT = booleanPreferencesKey("use_system_font")
         val BLUR_EFFECTS = booleanPreferencesKey("blur_effects")
         val HAS_REQUESTED_NOTIFICATION_PERMISSION = booleanPreferencesKey("has_requested_notification_permission")
         val NOTIFICATIONS_ENABLED = booleanPreferencesKey("notifications_enabled")
@@ -99,6 +100,10 @@ class SettingsRepository @Inject constructor(
         preferences[PreferencesKeys.PREDICTIVE_BACK] ?: true
     }
 
+    val useSystemFontFlow: Flow<Boolean> = context.dataStore.data.map { preferences ->
+        preferences[PreferencesKeys.USE_SYSTEM_FONT] ?: false
+    }
+
     val blurEffectsFlow: Flow<Boolean> = context.dataStore.data.map { preferences ->
         preferences[PreferencesKeys.BLUR_EFFECTS] ?: false
     }
@@ -118,6 +123,12 @@ class SettingsRepository @Inject constructor(
     suspend fun updatePaletteStyle(style: PaletteStyle) {
         context.dataStore.edit { preferences ->
             preferences[PreferencesKeys.PALETTE_STYLE] = style.name
+        }
+    }
+
+    suspend fun updateUseSystemFont(useSystemFont: Boolean) {
+        context.dataStore.edit { preferences ->
+            preferences[PreferencesKeys.USE_SYSTEM_FONT] = useSystemFont
         }
     }
 
