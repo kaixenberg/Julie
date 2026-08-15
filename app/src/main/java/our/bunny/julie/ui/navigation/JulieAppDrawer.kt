@@ -73,29 +73,31 @@ fun JulieAppDrawer(
                     modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
                 )
 
-                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+                if (pets.isNotEmpty()) {
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
-                pets.forEach { pet ->
-                    NavigationDrawerItem(
-                        icon = { 
-                            Text(
-                                text = PetData.getEmojiForSpecies(pet.species),
-                                style = MaterialTheme.typography.titleMedium
-                            ) 
-                        },
-                        label = { Text(pet.name) },
-                        selected = currentRoute?.startsWith("pet_detail/${pet.id}") == true,
-                        onClick = {
-                            coroutineScope.launch { drawerState.close() }
-                            if (currentRoute?.startsWith("pet_detail/${pet.id}") != true) {
-                                navController.navigate("pet_detail/${pet.id}") {
-                                    popUpTo(navController.graph.startDestinationId)
-                                    launchSingleTop = true
+                    pets.forEach { pet ->
+                        NavigationDrawerItem(
+                            icon = { 
+                                Text(
+                                    text = PetData.getEmojiForSpecies(pet.species),
+                                    style = MaterialTheme.typography.titleMedium
+                                ) 
+                            },
+                            label = { Text(pet.name) },
+                            selected = currentRoute?.startsWith("pet_detail/${pet.id}") == true,
+                            onClick = {
+                                coroutineScope.launch { drawerState.close() }
+                                if (currentRoute?.startsWith("pet_detail/${pet.id}") != true) {
+                                    navController.navigate("pet_detail/${pet.id}") {
+                                        popUpTo(navController.graph.startDestinationId)
+                                        launchSingleTop = true
+                                    }
                                 }
-                            }
-                        },
-                        modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
-                    )
+                            },
+                            modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
+                        )
+                    }
                 }
 
                 HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
