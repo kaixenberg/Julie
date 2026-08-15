@@ -56,6 +56,9 @@ fun AppNavigation(navController: NavHostController, onOpenDrawer: () -> Unit) {
                 onNavigateToAddPet = {
                     navController.navigate(Screen.AddEditPet.createRoute())
                 },
+                onNavigateToEditPet = { petId ->
+                    navController.navigate(Screen.AddEditPet.createRoute(petId))
+                },
                 onNavigateToPetDetail = { petId ->
                     navController.navigate(Screen.PetDetail.createRoute(petId.toString()))
                 },

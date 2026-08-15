@@ -23,6 +23,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.graphics.Color
+import androidx.compose.foundation.background
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Menu
 import androidx.hilt.navigation.compose.hiltViewModel
 import our.bunny.julie.domain.model.Pet
 import our.bunny.julie.ui.screens.home.PetAvatar
@@ -35,6 +43,7 @@ fun DashboardScreen(
     paddingValues: PaddingValues, // Ignored, as DashboardScreen now owns its scaffold
     onOpenDrawer: () -> Unit,
     onNavigateToAddPet: () -> Unit,
+    onNavigateToEditPet: (Long) -> Unit,
     onNavigateToPetDetail: (Long) -> Unit,
     onNavigateToPetStatDetail: (Long, our.bunny.julie.ui.navigation.StatType) -> Unit,
     viewModel: DashboardViewModel = hiltViewModel()
@@ -45,23 +54,53 @@ fun DashboardScreen(
     val availableSpecies by viewModel.availableSpecies.collectAsState()
     var isSearchActive by remember { mutableStateOf(false) }
     var isFilterExpanded by remember { mutableStateOf(false) }
+    var selectedPetId by remember { mutableStateOf<Long?>(null) }
 
     our.bunny.julie.ui.navigation.JulieAppScaffold(
-        title = "Dashboard",
+        title = if (selectedPetId != null) "1 Selected" else "Dashboard",
         onOpenDrawer = onOpenDrawer,
-        isSearchActive = isSearchActive,
+        isSearchActive = isSearchActive && selectedPetId == null,
         searchQuery = searchQuery,
         onSearchQueryChange = { viewModel.searchQuery.value = it },
         onSearchClose = {
             isSearchActive = false
             viewModel.searchQuery.value = ""
         },
-        actions = {
-            IconButton(onClick = { isSearchActive = true }) {
-                Icon(Icons.Default.Search, contentDescription = "Search Pets")
+        navigationIcon = {
+            if (selectedPetId != null) {
+                IconButton(onClick = { selectedPetId = null }) {
+                    Icon(Icons.Default.Close, contentDescription = "Clear Selection")
+                }
+            } else {
+                IconButton(onClick = onOpenDrawer) {
+                    Icon(
+                        imageVector = Icons.Default.Menu,
+                        contentDescription = "Open navigation drawer"
+                    )
+                }
             }
-            IconButton(onClick = { isFilterExpanded = !isFilterExpanded }) {
-                Icon(Icons.Default.FilterList, contentDescription = "Filter by Species")
+        },
+        actions = {
+            if (selectedPetId != null) {
+                IconButton(onClick = {
+                    onNavigateToEditPet(selectedPetId!!)
+                    selectedPetId = null
+                }) {
+                    Icon(Icons.Default.Edit, contentDescription = "Edit Pet")
+                }
+                IconButton(onClick = {
+                    viewModel.deletePet(selectedPetId!!)
+                    selectedPetId = null
+                }) {
+                    Icon(Icons.Default.Delete, contentDescription = "Delete Pet")
+                }
+            } else {
+                IconButton(onClick = { isSearchActive = true }) {
+                    Icon(Icons.Default.Search, contentDescription = "Search Pets")
+                }
+                IconButton(onClick = { isFilterExpanded = !isFilterExpanded }) {
+                    Icon(Icons.Default.FilterList, contentDescription = "Filter by Species")
+                }
             }
         },
         floatingActionButton = {
@@ -169,8 +208,14 @@ fun DashboardScreen(
                             petData = petData,
                             weightUnit = uiState.weightUnit,
                             waterUnit = uiState.waterUnit,
+                            isSelected = selectedPetId == petData.pet.id,
+                            isSelectionModeActive = selectedPetId != null,
                             onNavigateToPetDetail = onNavigateToPetDetail,
-                            onNavigateToPetStatDetail = onNavigateToPetStatDetail
+                            onNavigateToPetStatDetail = onNavigateToPetStatDetail,
+                            onToggleSelection = {
+                                selectedPetId = if (selectedPetId == petData.pet.id) null else petData.pet.id
+                            },
+                            onLongPress = { selectedPetId = petData.pet.id }
                         )
                         
                         if (uiState.petsData.size >= 3) {
@@ -183,13 +228,18 @@ fun DashboardScreen(
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun PetSummarySection(
     petData: PetDashboardData,
     weightUnit: WeightUnit,
     waterUnit: WaterUnit,
+    isSelected: Boolean,
+    isSelectionModeActive: Boolean,
     onNavigateToPetDetail: (Long) -> Unit,
-    onNavigateToPetStatDetail: (Long, our.bunny.julie.ui.navigation.StatType) -> Unit
+    onNavigateToPetStatDetail: (Long, our.bunny.julie.ui.navigation.StatType) -> Unit,
+    onToggleSelection: () -> Unit,
+    onLongPress: () -> Unit
 ) {
     Column(
         modifier = Modifier.fillMaxWidth()
@@ -198,8 +248,19 @@ fun PetSummarySection(
         Row(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier
+                .fillMaxWidth()
                 .padding(bottom = 16.dp)
-                .clickable { onNavigateToPetDetail(petData.pet.id) }
+                .combinedClickable(
+                    onClick = {
+                        if (isSelectionModeActive) {
+                            onToggleSelection()
+                        } else {
+                            onNavigateToPetDetail(petData.pet.id)
+                        }
+                    },
+                    onLongClick = onLongPress
+                )
+                .background(if (isSelected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f) else Color.Transparent)
                 .padding(4.dp) // extra touch target padding
         ) {
             PetAvatar(species = petData.pet.species)

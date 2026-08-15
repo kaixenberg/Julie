@@ -24,6 +24,14 @@ fun JulieAppScaffold(
     searchQuery: String = "",
     onSearchQueryChange: (String) -> Unit = {},
     onSearchClose: () -> Unit = {},
+    navigationIcon: @Composable () -> Unit = {
+        IconButton(onClick = onOpenDrawer) {
+            Icon(
+                imageVector = Icons.Default.Menu,
+                contentDescription = "Open navigation drawer"
+            )
+        }
+    },
     content: @Composable (PaddingValues) -> Unit
 ) {
     Scaffold(
@@ -64,14 +72,7 @@ fun JulieAppScaffold(
                 TopAppBar(
                     title = { Text(text = title) },
                     actions = actions,
-                    navigationIcon = {
-                        IconButton(onClick = onOpenDrawer) {
-                            Icon(
-                                imageVector = Icons.Default.Menu,
-                                contentDescription = "Open navigation drawer"
-                            )
-                        }
-                    },
+                    navigationIcon = navigationIcon,
                     colors = TopAppBarDefaults.topAppBarColors(
                         containerColor = MaterialTheme.colorScheme.primary,
                         titleContentColor = MaterialTheme.colorScheme.onPrimary,
