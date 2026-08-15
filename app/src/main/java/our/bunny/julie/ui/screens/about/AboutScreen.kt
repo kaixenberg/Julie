@@ -202,12 +202,6 @@ fun AboutScreen(
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
-                    Spacer(modifier = Modifier.height(2.dp))
-                    Text(
-                        text = BuildConfig.APPLICATION_ID,
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.outline
-                    )
                 }
             }
 
@@ -286,39 +280,41 @@ fun AboutScreen(
 
             Spacer(modifier = Modifier.height(8.dp))
             
-            // Check for Updates Button
-            Button(
-                onClick = {
-                    if (isCheckingUpdate) return@Button
-                    isCheckingUpdate = true
-                    coroutineScope.launch {
-                        val updateInfo = UpdateManager.checkForUpdates()
-                        if (updateInfo != null && updateInfo.isUpdateAvailable) {
-                            UpdateManager.downloadAndInstallUpdate(context, updateInfo)
-                        } else {
-                            Toast.makeText(context, "You are on the latest version", Toast.LENGTH_SHORT).show()
+            if (!BuildConfig.DEBUG) {
+                // Check for Updates Button
+                Button(
+                    onClick = {
+                        if (isCheckingUpdate) return@Button
+                        isCheckingUpdate = true
+                        coroutineScope.launch {
+                            val updateInfo = UpdateManager.checkForUpdates()
+                            if (updateInfo != null && updateInfo.isUpdateAvailable) {
+                                UpdateManager.downloadAndInstallUpdate(context, updateInfo)
+                            } else {
+                                Toast.makeText(context, "You are on the latest version", Toast.LENGTH_SHORT).show()
+                            }
+                            isCheckingUpdate = false
                         }
-                        isCheckingUpdate = false
-                    }
-                },
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer,
-                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer
-                )
-            ) {
-                if (isCheckingUpdate) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(24.dp),
-                        color = MaterialTheme.colorScheme.onPrimaryContainer,
-                        strokeWidth = 2.dp
+                    },
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.primaryContainer,
+                        contentColor = MaterialTheme.colorScheme.onPrimaryContainer
                     )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("Checking for updates...")
-                } else {
-                    Icon(Icons.Default.Info, contentDescription = null, modifier = Modifier.size(20.dp))
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("Check for Updates")
+                ) {
+                    if (isCheckingUpdate) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(24.dp),
+                            color = MaterialTheme.colorScheme.onPrimaryContainer,
+                            strokeWidth = 2.dp
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Checking for updates...")
+                    } else {
+                        Icon(Icons.Default.Info, contentDescription = null, modifier = Modifier.size(20.dp))
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Check for Updates")
+                    }
                 }
             }
             
