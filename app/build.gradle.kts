@@ -25,9 +25,31 @@ android {
         }
     }
 
+    flavorDimensions += "abi"
+
+    productFlavors {
+        create("arm64") {
+            dimension = "abi"
+            ndk {
+                abiFilters += "arm64-v8a"
+            }
+        }
+        create("armv7") {
+            dimension = "abi"
+            ndk {
+                abiFilters += "armeabi-v7a"
+            }
+        }
+        create("universal") {
+            dimension = "abi"
+            // No abiFilters, so all ABIs are included
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = true
+            isShrinkResources = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
@@ -48,6 +70,19 @@ android {
     packaging {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
+        }
+    }
+    applicationVariants.all {
+        val variant = this
+        variant.outputs.all {
+            val outputImpl = this as com.android.build.gradle.internal.api.ApkVariantOutputImpl
+            val flavorName = variant.flavorName
+            val buildType = variant.buildType.name
+            val version = variant.versionName
+            val typeSuffix = if (buildType == "release") "" else "-debug"
+            if (flavorName.isNotEmpty()) {
+                outputImpl.outputFileName = "Julie-v$version-$flavorName$typeSuffix.apk"
+            }
         }
     }
 }
