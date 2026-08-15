@@ -4,6 +4,7 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
@@ -71,4 +72,13 @@ class PetDetailViewModel @Inject constructor(
         started = SharingStarted.WhileSubscribed(5000),
         initialValue = PetDetailUiState(isLoading = true)
     )
+
+    fun deletePet(petId: Long) {
+        viewModelScope.launch {
+            val pet = petRepository.getPetById(petId)
+            if (pet != null) {
+                petRepository.deletePet(pet)
+            }
+        }
+    }
 }

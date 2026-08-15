@@ -7,6 +7,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -29,6 +30,8 @@ import our.bunny.julie.ui.screens.export.ExportViewModel
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.material.icons.filled.Done
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Save
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -100,88 +103,162 @@ fun PetDetailScreen(
                 },
                 actions = {
                     uiState.pet?.let { pet ->
+                        // Overflow Menu State
+                        var showMenu by remember { mutableStateOf(false) }
+
+                        // Top Level Actions (Share)
                         if (exportState is ExportState.Generating) {
                             CircularProgressIndicator(
                                 modifier = Modifier.size(24.dp).padding(end = 8.dp),
                                 color = MaterialTheme.colorScheme.onPrimary
                             )
                         } else {
-                            IconButton(onClick = { 
+                            IconButton(onClick = {
                                 exportAction = "SHARE"
-                                exportViewModel.generatePdf(context, pet.id) 
+                                exportViewModel.generatePdf(context, pet.id)
                             }) {
                                 Icon(Icons.Default.Share, contentDescription = "Share PDF")
                             }
-                            IconButton(onClick = { 
-                                exportAction = "SAVE"
-                                exportViewModel.generatePdf(context, pet.id) 
-                            }) {
-                                Icon(Icons.Default.Done, contentDescription = "Save PDF")
-                            }
                         }
-                        
-                        // Add Widget Button
-                        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-                            val appWidgetManager = android.appwidget.AppWidgetManager.getInstance(context)
-                            if (appWidgetManager.isRequestPinAppWidgetSupported) {
-                                var showWidgetSizeDialog by remember { mutableStateOf(false) }
 
-                                IconButton(onClick = {
-                                    showWidgetSizeDialog = true
-                                }) {
-                                    Icon(Icons.Default.Add, contentDescription = "Add Widget")
+                        // Overflow Menu Icon
+                        IconButton(onClick = { showMenu = true }) {
+                            Icon(Icons.Default.MoreVert, contentDescription = "More options")
+                        }
+
+                        DropdownMenu(
+                            expanded = showMenu,
+                            onDismissRequest = { showMenu = false }
+                        ) {
+                            DropdownMenuItem(
+                                text = { Text("Edit Pet") },
+                                onClick = {
+                                    showMenu = false
+                                    onNavigateToEditPet(pet.id)
+                                },
+                                leadingIcon = {
+                                    Icon(Icons.Default.Edit, contentDescription = null)
                                 }
+                            )
 
-                                if (showWidgetSizeDialog) {
-                                    AlertDialog(
-                                        onDismissRequest = { showWidgetSizeDialog = false },
-                                        title = { Text("Choose Widget Size") },
-                                        text = { Text("Select the size of the widget you want to pin to your home screen.") },
-                                        confirmButton = {
-                                            TextButton(onClick = {
-                                                showWidgetSizeDialog = false
-                                                val componentName = android.content.ComponentName(context, our.bunny.julie.widget.PetStatWidget2x2Provider::class.java)
-                                                val intent = Intent(context, our.bunny.julie.widget.WidgetPinReceiver::class.java).apply {
-                                                    action = "our.bunny.julie.ACTION_WIDGET_PINNED"
-                                                    putExtra("EXTRA_PET_ID", pet.id)
-                                                    putExtra("EXTRA_STAT_MODE", "Weight")
-                                                    putExtra("EXTRA_PROVIDER_CLASS", "our.bunny.julie.widget.PetStatWidget2x2Provider")
-                                                }
-                                                val successCallback = android.app.PendingIntent.getBroadcast(
-                                                    context, pet.id.toInt(), intent,
-                                                    android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_MUTABLE
-                                                )
-                                                appWidgetManager.requestPinAppWidget(componentName, null, successCallback)
-                                            }) {
-                                                Text("Small (2x2)")
-                                            }
+                            DropdownMenuItem(
+                                text = { Text("Save PDF") },
+                                onClick = {
+                                    showMenu = false
+                                    exportAction = "SAVE"
+                                    exportViewModel.generatePdf(context, pet.id)
+                                },
+                                leadingIcon = {
+                                    Icon(Icons.Default.Save, contentDescription = null)
+                                }
+                            )
+
+                            // Add Widget Button (only available on Android O+)
+                            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                                val appWidgetManager = android.appwidget.AppWidgetManager.getInstance(context)
+                                if (appWidgetManager.isRequestPinAppWidgetSupported) {
+                                    var showWidgetSizeDialog by remember { mutableStateOf(false) }
+                                    DropdownMenuItem(
+                                        text = { Text("Add Widget") },
+                                        onClick = {
+                                            showWidgetSizeDialog = true
                                         },
-                                        dismissButton = {
-                                            TextButton(onClick = {
-                                                showWidgetSizeDialog = false
-                                                val componentName = android.content.ComponentName(context, our.bunny.julie.widget.PetStatWidget4x2Provider::class.java)
-                                                val intent = Intent(context, our.bunny.julie.widget.WidgetPinReceiver::class.java).apply {
-                                                    action = "our.bunny.julie.ACTION_WIDGET_PINNED"
-                                                    putExtra("EXTRA_PET_ID", pet.id)
-                                                    putExtra("EXTRA_STAT_MODE", "Weight")
-                                                    putExtra("EXTRA_PROVIDER_CLASS", "our.bunny.julie.widget.PetStatWidget4x2Provider")
-                                                }
-                                                val successCallback = android.app.PendingIntent.getBroadcast(
-                                                    context, pet.id.toInt() + 1000, intent,
-                                                    android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_MUTABLE
-                                                )
-                                                appWidgetManager.requestPinAppWidget(componentName, null, successCallback)
-                                            }) {
-                                                Text("Large (4x2)")
-                                            }
+                                        leadingIcon = {
+                                            Icon(Icons.Default.Add, contentDescription = null)
                                         }
                                     )
+
+                                    if (showWidgetSizeDialog) {
+                                        AlertDialog(
+                                            onDismissRequest = {
+                                                showWidgetSizeDialog = false
+                                                showMenu = false
+                                            },
+                                            title = { Text("Choose Widget Size") },
+                                            text = { Text("Select the size of the widget you want to pin to your home screen.") },
+                                            confirmButton = {
+                                                TextButton(onClick = {
+                                                    showWidgetSizeDialog = false
+                                                    showMenu = false
+                                                    val componentName = android.content.ComponentName(context, our.bunny.julie.widget.PetStatWidget2x2Provider::class.java)
+                                                    val intent = Intent(context, our.bunny.julie.widget.WidgetPinReceiver::class.java).apply {
+                                                        action = "our.bunny.julie.ACTION_WIDGET_PINNED"
+                                                        putExtra("EXTRA_PET_ID", pet.id)
+                                                        putExtra("EXTRA_STAT_MODE", "Weight")
+                                                        putExtra("EXTRA_PROVIDER_CLASS", "our.bunny.julie.widget.PetStatWidget2x2Provider")
+                                                    }
+                                                    val successCallback = android.app.PendingIntent.getBroadcast(
+                                                        context, pet.id.toInt(), intent,
+                                                        android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_MUTABLE
+                                                    )
+                                                    appWidgetManager.requestPinAppWidget(componentName, null, successCallback)
+                                                }) {
+                                                    Text("Small (2x2)")
+                                                }
+                                            },
+                                            dismissButton = {
+                                                TextButton(onClick = {
+                                                    showWidgetSizeDialog = false
+                                                    showMenu = false
+                                                    val componentName = android.content.ComponentName(context, our.bunny.julie.widget.PetStatWidget4x2Provider::class.java)
+                                                    val intent = Intent(context, our.bunny.julie.widget.WidgetPinReceiver::class.java).apply {
+                                                        action = "our.bunny.julie.ACTION_WIDGET_PINNED"
+                                                        putExtra("EXTRA_PET_ID", pet.id)
+                                                        putExtra("EXTRA_STAT_MODE", "Weight")
+                                                        putExtra("EXTRA_PROVIDER_CLASS", "our.bunny.julie.widget.PetStatWidget4x2Provider")
+                                                    }
+                                                    val successCallback = android.app.PendingIntent.getBroadcast(
+                                                        context, pet.id.toInt() + 1000, intent,
+                                                        android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_MUTABLE
+                                                    )
+                                                    appWidgetManager.requestPinAppWidget(componentName, null, successCallback)
+                                                }) {
+                                                    Text("Large (4x2)")
+                                                }
+                                            }
+                                        )
+                                    }
                                 }
                             }
-                        }
-
-                        IconButton(onClick = { onNavigateToEditPet(pet.id) }) {
-                            Icon(Icons.Default.Edit, contentDescription = "Edit Pet")
+                            
+                            var showDeleteDialog by remember { mutableStateOf(false) }
+                            DropdownMenuItem(
+                                text = { Text("Delete Pet", color = MaterialTheme.colorScheme.error) },
+                                onClick = {
+                                    showDeleteDialog = true
+                                },
+                                leadingIcon = {
+                                    Icon(Icons.Default.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error)
+                                }
+                            )
+                            if (showDeleteDialog) {
+                                AlertDialog(
+                                    onDismissRequest = {
+                                        showDeleteDialog = false
+                                        showMenu = false
+                                    },
+                                    title = { Text("Delete Pet") },
+                                    text = { Text("Are you sure you want to delete this pet? This action cannot be undone.") },
+                                    confirmButton = {
+                                        TextButton(onClick = {
+                                            showDeleteDialog = false
+                                            showMenu = false
+                                            viewModel.deletePet(pet.id)
+                                            onNavigateUp()
+                                        }) {
+                                            Text("Delete", color = MaterialTheme.colorScheme.error)
+                                        }
+                                    },
+                                    dismissButton = {
+                                        TextButton(onClick = {
+                                            showDeleteDialog = false
+                                            showMenu = false
+                                        }) {
+                                            Text("Cancel")
+                                        }
+                                    }
+                                )
+                            }
                         }
                     }
                 },
