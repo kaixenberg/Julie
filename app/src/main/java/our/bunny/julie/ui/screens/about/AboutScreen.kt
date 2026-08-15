@@ -30,6 +30,8 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import our.bunny.julie.BuildConfig
 import our.bunny.julie.R
+import our.bunny.julie.util.UpdateManager
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -41,6 +43,8 @@ fun AboutScreen(
     var tapCount by remember { mutableIntStateOf(0) }
     var lastTapTime by remember { mutableLongStateOf(0L) }
     var showEasterEgg by remember { mutableStateOf(false) }
+    var isCheckingUpdate by remember { mutableStateOf(false) }
+    val coroutineScope = rememberCoroutineScope()
 
     fun handleIconTap() {
         val currentTime = System.currentTimeMillis()
@@ -185,10 +189,15 @@ fun AboutScreen(
                     }
                     
                     Spacer(modifier = Modifier.height(16.dp))
-                    Text("Julie", style = MaterialTheme.typography.headlineMedium)
+                    Text(
+                        text = "Julie",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        "v${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})",
+                        text = "v${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -268,7 +277,45 @@ fun AboutScreen(
                 }
             }
 
-            Spacer(modifier = Modifier.height(32.dp))
+            Spacer(modifier = Modifier.height(8.dp))
+            
+            // Check for Updates Button
+            Button(
+                onClick = {
+                    if (isCheckingUpdate) return@Button
+                    isCheckingUpdate = true
+                    coroutineScope.launch {
+                        val updateInfo = UpdateManager.checkForUpdates()
+                        if (updateInfo != null && updateInfo.isUpdateAvailable) {
+                            UpdateManager.downloadAndInstallUpdate(context, updateInfo)
+                        } else {
+                            Toast.makeText(context, "You are on the latest version", Toast.LENGTH_SHORT).show()
+                        }
+                        isCheckingUpdate = false
+                    }
+                },
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primaryContainer,
+                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                )
+            ) {
+                if (isCheckingUpdate) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(24.dp),
+                        color = MaterialTheme.colorScheme.onPrimaryContainer,
+                        strokeWidth = 2.dp
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Checking for updates...")
+                } else {
+                    Icon(Icons.Default.Info, contentDescription = null, modifier = Modifier.size(20.dp))
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Check for Updates")
+                }
+            }
+            
+            Spacer(modifier = Modifier.height(24.dp))
         }
     }
 }

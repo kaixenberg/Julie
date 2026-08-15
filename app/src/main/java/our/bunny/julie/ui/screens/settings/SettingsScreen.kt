@@ -76,11 +76,30 @@ fun SettingsScreen(
     }
     
     val lifecycleOwner = LocalLifecycleOwner.current
+    val showMiuiAutostartWarning = BatteryOptimizationHelper.isXiaomiFamily() &&
+                                   notificationUiState.notificationsEnabled &&
+                                   miuiAutostartState == AutostartState.DISABLED
+
+    var hasInstallPermission by remember {
+        mutableStateOf(
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                context.packageManager.canRequestPackageInstalls()
+            } else {
+                true
+            }
+        )
+    }
+
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_RESUME) {
                 isIgnoringBatteryOptimizations = BatteryOptimizationHelper.isIgnoringBatteryOptimizations(context)
                 miuiAutostartState = MiuiAutostartHelper.getAutostartState(context)
+                hasInstallPermission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    context.packageManager.canRequestPackageInstalls()
+                } else {
+                    true
+                }
             }
         }
         lifecycleOwner.lifecycle.addObserver(observer)
@@ -92,10 +111,6 @@ fun SettingsScreen(
     val showBatteryWarning = BatteryOptimizationHelper.isAggressiveOem() && 
                              notificationUiState.notificationsEnabled && 
                              !isIgnoringBatteryOptimizations
-
-    val showMiuiAutostartWarning = BatteryOptimizationHelper.isXiaomiFamily() &&
-                                   notificationUiState.notificationsEnabled &&
-                                   miuiAutostartState == AutostartState.DISABLED
 
     LaunchedEffect(Unit) {
         backupRestoreViewModel.events.collect { event ->
@@ -308,6 +323,65 @@ fun SettingsScreen(
             verticalArrangement = Arrangement.spacedBy(24.dp)
         ) {
             Spacer(modifier = Modifier.height(8.dp))
+
+            AnimatedVisibility(visible = !hasInstallPermission) {
+                Card(
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.errorContainer,
+                        contentColor = MaterialTheme.colorScheme.onErrorContainer
+                    ),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable {
+                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                                val intent = Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES).apply {
+                                    data = Uri.parse("package:${context.packageName}")
+                                }
+                                context.startActivity(intent)
+                            }
+                        }
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Warning,
+                            contentDescription = "Warning",
+                            modifier = Modifier.size(24.dp)
+                        )
+                        Spacer(modifier = Modifier.width(16.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "Provide Install Permissions",
+                                style = MaterialTheme.typography.titleSmall,
+                                fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
+                            )
+                            Text(
+                                text = "Required to seamlessly update the app in the background.",
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                        }
+                        IconButton(
+                            onClick = {
+                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                                    val intent = Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES).apply {
+                                        data = Uri.parse("package:${context.packageName}")
+                                    }
+                                    context.startActivity(intent)
+                                }
+                            }
+                        ) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                                contentDescription = "Settings"
+                            )
+                        }
+                    }
+                }
+            }
 
             AnimatedVisibility(visible = showBatteryWarning) {
                 Card(
