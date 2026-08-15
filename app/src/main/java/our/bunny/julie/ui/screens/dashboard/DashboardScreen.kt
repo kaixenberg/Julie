@@ -7,6 +7,9 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.activity.compose.BackHandler
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.FilterList
@@ -55,6 +58,10 @@ fun DashboardScreen(
     var isSearchActive by remember { mutableStateOf(false) }
     var isFilterExpanded by remember { mutableStateOf(false) }
     var selectedPetId by remember { mutableStateOf<Long?>(null) }
+
+    BackHandler(enabled = selectedPetId != null) {
+        selectedPetId = null
+    }
 
     our.bunny.julie.ui.navigation.JulieAppScaffold(
         title = if (selectedPetId != null) "1 Selected" else "Dashboard",
@@ -109,7 +116,17 @@ fun DashboardScreen(
             }
         }
     ) { innerPadding ->
-        Column(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
+        Column(modifier = Modifier
+            .fillMaxSize()
+            .padding(innerPadding)
+            .pointerInput(Unit) {
+                detectTapGestures(onTap = {
+                    if (selectedPetId != null) {
+                        selectedPetId = null
+                    }
+                })
+            }
+        ) {
             AnimatedVisibility(visible = isFilterExpanded && availableSpecies.isNotEmpty()) {
                 Row(
                     modifier = Modifier

@@ -14,7 +14,11 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.activity.compose.BackHandler
 import androidx.compose.material.icons.filled.Check
 
 data class MenuOption(
@@ -184,6 +188,24 @@ fun TrackerListScaffold(
             }
         },
         floatingActionButton = floatingActionButton,
-        content = content
+        content = { innerPadding ->
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .pointerInput(Unit) {
+                        detectTapGestures(onTap = {
+                            if (isSelectionMode) {
+                                onClearSelection()
+                            }
+                        })
+                    }
+            ) {
+                content(innerPadding)
+            }
+        }
     )
+
+    BackHandler(enabled = isSelectionMode) {
+        onClearSelection()
+    }
 }
