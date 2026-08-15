@@ -9,12 +9,17 @@ import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import dagger.hilt.android.AndroidEntryPoint
 import our.bunny.julie.data.local.WidgetConfigStore
+import our.bunny.julie.data.local.WidgetSlotConfig
 import our.bunny.julie.domain.model.Pet
 import our.bunny.julie.domain.repository.PetRepository
 import our.bunny.julie.ui.theme.JulieTheme
@@ -22,14 +27,6 @@ import our.bunny.julie.widget.PetStatWidget2x2Provider
 import our.bunny.julie.widget.PetStatWidget4x2Provider
 import javax.inject.Inject
 
-/**
- * Single configuration Activity for both 2x2 and 4x2 widgets.
- *
- * Design choice: One Activity, one Composable tree. We detect the widget type by inspecting
- * AppWidgetManager.getAppWidgetInfo(appWidgetId).provider.className. If it's the 4x2 provider,
- * we render two StatSlotSelector groups stacked vertically; otherwise just one. This avoids
- * duplicating any UI code — the shared [StatSlotSelector] composable does all the heavy lifting.
- */
 @AndroidEntryPoint
 class WidgetConfigureActivity : ComponentActivity() {
 
@@ -49,31 +46,27 @@ class WidgetConfigureActivity : ComponentActivity() {
         appWidgetId = intent.getIntExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, AppWidgetManager.INVALID_APPWIDGET_ID)
         if (appWidgetId == AppWidgetManager.INVALID_APPWIDGET_ID) { finish(); return }
 
-        // Detect whether this is a 4x2 widget by checking the provider class name
         val is4x2 = AppWidgetManager.getInstance(this)
             .getAppWidgetInfo(appWidgetId)
             ?.provider?.className
             ?.contains("4x2") == true
+            
+        val maxSlots = if (is4x2) 4 else 2
 
         setContent {
             JulieTheme {
                 val pets by petRepository.getAllPets().collectAsState(initial = emptyList())
 
-                // Slot 1 state
-                var slot1Pet  by remember { mutableStateOf<Pet?>(null) }
-                var slot1Mode by remember { mutableStateOf("Auto") }
-                // Slot 2 state (only used for 4x2)
-                var slot2Pet  by remember { mutableStateOf<Pet?>(null) }
-                var slot2Mode by remember { mutableStateOf("Water") }
+                // Dynamic list of slots
+                var slots by remember { mutableStateOf(listOf(WidgetSlotConfig(-1L, "Auto"))) }
 
                 LaunchedEffect(pets) {
-                    if (pets.isNotEmpty()) {
-                        if (slot1Pet == null) slot1Pet = pets.first()
-                        if (slot2Pet == null) slot2Pet = pets.first()
+                    if (pets.isNotEmpty() && slots.first().petId == -1L) {
+                        slots = listOf(WidgetSlotConfig(pets.first().id, "Auto"))
                     }
                 }
 
-                val canSave = slot1Pet != null && (!is4x2 || slot2Pet != null)
+                val canSave = slots.all { it.petId != -1L }
 
                 Scaffold(
                     topBar = {
@@ -88,42 +81,68 @@ class WidgetConfigureActivity : ComponentActivity() {
                             .padding(16.dp),
                         verticalArrangement = Arrangement.spacedBy(24.dp)
                     ) {
-                        // Slot 1
-                        StatSlotSelector(
-                            slotLabel = if (is4x2) "Left Stat" else null,
-                            pets = pets,
-                            selectedPet = slot1Pet,
-                            selectedMode = slot1Mode,
-                            onPetSelected = { slot1Pet = it },
-                            onModeSelected = { slot1Mode = it }
-                        )
+                        slots.forEachIndexed { index, slot ->
+                            val selectedPet = pets.find { it.id == slot.petId }
+                            
+                            Row(verticalAlignment = Alignment.Top) {
+                                Box(modifier = Modifier.weight(1f)) {
+                                    StatSlotSelector(
+                                        slotLabel = "Stat ${index + 1}",
+                                        pets = pets,
+                                        selectedPet = selectedPet,
+                                        selectedMode = slot.statMode,
+                                        onPetSelected = { pet ->
+                                            val newSlots = slots.toMutableList()
+                                            newSlots[index] = slot.copy(petId = pet.id)
+                                            slots = newSlots
+                                        },
+                                        onModeSelected = { mode ->
+                                            val newSlots = slots.toMutableList()
+                                            newSlots[index] = slot.copy(statMode = mode)
+                                            slots = newSlots
+                                        }
+                                    )
+                                }
+                                
+                                if (slots.size > 1) {
+                                    IconButton(
+                                        onClick = {
+                                            val newSlots = slots.toMutableList()
+                                            newSlots.removeAt(index)
+                                            slots = newSlots
+                                        },
+                                        modifier = Modifier.padding(top = 32.dp)
+                                    ) {
+                                        Icon(Icons.Default.Delete, contentDescription = "Remove Stat", tint = MaterialTheme.colorScheme.error)
+                                    }
+                                }
+                            }
+                            
+                            if (index < slots.size - 1) {
+                                HorizontalDivider()
+                            }
+                        }
 
-                        // Slot 2 only for 4x2
-                        if (is4x2) {
-                            HorizontalDivider()
-                            StatSlotSelector(
-                                slotLabel = "Right Stat",
-                                pets = pets,
-                                selectedPet = slot2Pet,
-                                selectedMode = slot2Mode,
-                                onPetSelected = { slot2Pet = it },
-                                onModeSelected = { slot2Mode = it }
-                            )
+                        if (slots.size < maxSlots) {
+                            OutlinedButton(
+                                onClick = {
+                                    val newPetId = pets.firstOrNull()?.id ?: -1L
+                                    slots = slots + WidgetSlotConfig(newPetId, "Auto")
+                                },
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Icon(Icons.Default.Add, contentDescription = "Add Stat")
+                                Spacer(Modifier.width(8.dp))
+                                Text("Add Stat (${slots.size}/$maxSlots)")
+                            }
                         }
 
                         Spacer(modifier = Modifier.weight(1f))
 
                         Button(
                             onClick = {
-                                val p1 = slot1Pet ?: return@Button
-                                // Save slot 1
-                                widgetConfigStore.saveSlotConfig(appWidgetId, 1, p1.id, slot1Mode)
-                                // Save slot 2 only for 4x2
-                                if (is4x2) {
-                                    val p2 = slot2Pet ?: return@Button
-                                    widgetConfigStore.saveSlotConfig(appWidgetId, 2, p2.id, slot2Mode)
-                                }
-                                // Trigger the right provider to update
+                                widgetConfigStore.saveWidgetConfig(appWidgetId, slots)
+                                
                                 val providerClass = if (is4x2) PetStatWidget4x2Provider::class.java else PetStatWidget2x2Provider::class.java
                                 val updateIntent = Intent(this@WidgetConfigureActivity, providerClass).apply {
                                     action = AppWidgetManager.ACTION_APPWIDGET_UPDATE

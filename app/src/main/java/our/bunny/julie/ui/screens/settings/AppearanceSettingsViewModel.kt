@@ -1,8 +1,10 @@
 package our.bunny.julie.ui.screens.settings
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
@@ -25,6 +27,7 @@ data class AppearanceSettingsUiState(
 
 @HiltViewModel
 class AppearanceSettingsViewModel @Inject constructor(
+    @ApplicationContext private val context: Context,
     private val settingsRepository: SettingsRepository
 ) : ViewModel() {
 
@@ -55,42 +58,67 @@ class AppearanceSettingsViewModel @Inject constructor(
     fun updateThemeConfig(config: ThemeConfig) {
         viewModelScope.launch {
             settingsRepository.updateThemeConfig(config)
+            broadcastWidgetUpdate()
         }
     }
 
     fun updateDynamicColor(enabled: Boolean) {
         viewModelScope.launch {
             settingsRepository.updateDynamicColor(enabled)
+            broadcastWidgetUpdate()
         }
     }
 
     fun updatePaletteStyle(style: PaletteStyle) {
         viewModelScope.launch {
             settingsRepository.updatePaletteStyle(style)
+            broadcastWidgetUpdate()
         }
     }
 
     fun updatePredictiveBack(enabled: Boolean) {
         viewModelScope.launch {
             settingsRepository.updatePredictiveBack(enabled)
+            // No widget visual impact for this one, but safe to broadcast
         }
     }
 
     fun updateBlurEffects(enabled: Boolean) {
         viewModelScope.launch {
             settingsRepository.updateBlurEffects(enabled)
+            broadcastWidgetUpdate()
         }
     }
 
-    fun updateUseSystemFont(enabled: Boolean) {
+    fun updateUseSystemFont(useSystem: Boolean) {
         viewModelScope.launch {
-            settingsRepository.updateUseSystemFont(enabled)
+            settingsRepository.updateUseSystemFont(useSystem)
+            broadcastWidgetUpdate()
         }
     }
 
     fun updateOledBlack(oledBlack: Boolean) {
         viewModelScope.launch {
             settingsRepository.updateOledBlack(oledBlack)
+            broadcastWidgetUpdate()
         }
+    }
+
+    private fun broadcastWidgetUpdate() {
+        val appWidgetManager = android.appwidget.AppWidgetManager.getInstance(context)
+        
+        val intent2x2 = android.content.Intent(context, our.bunny.julie.widget.PetStatWidget2x2Provider::class.java).apply {
+            action = android.appwidget.AppWidgetManager.ACTION_APPWIDGET_UPDATE
+            val ids = appWidgetManager.getAppWidgetIds(android.content.ComponentName(context, our.bunny.julie.widget.PetStatWidget2x2Provider::class.java))
+            putExtra(android.appwidget.AppWidgetManager.EXTRA_APPWIDGET_IDS, ids)
+        }
+        context.sendBroadcast(intent2x2)
+
+        val intent4x2 = android.content.Intent(context, our.bunny.julie.widget.PetStatWidget4x2Provider::class.java).apply {
+            action = android.appwidget.AppWidgetManager.ACTION_APPWIDGET_UPDATE
+            val ids = appWidgetManager.getAppWidgetIds(android.content.ComponentName(context, our.bunny.julie.widget.PetStatWidget4x2Provider::class.java))
+            putExtra(android.appwidget.AppWidgetManager.EXTRA_APPWIDGET_IDS, ids)
+        }
+        context.sendBroadcast(intent4x2)
     }
 }
