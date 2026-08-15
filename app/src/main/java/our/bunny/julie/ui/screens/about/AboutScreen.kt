@@ -57,6 +57,31 @@ fun AboutScreen(
         lastTapTime = currentTime
     }
 
+    var showImageCreditsDialog by remember { mutableStateOf(false) }
+
+    if (showImageCreditsDialog) {
+        AlertDialog(
+            onDismissRequest = { showImageCreditsDialog = false },
+            title = { Text("Image Credits") },
+            text = {
+                Text(
+                    "The beautiful animal photography in the Fun Facts section is provided by talented artists on Unsplash:\n\n" +
+                    "• Dog: Charles Deluvio\n" +
+                    "• Cat: Manja Vitolic\n" +
+                    "• Rabbit: Satyabratasm\n" +
+                    "• Bird: David Clode\n" +
+                    "• Guinea Pig: Bonnie Kittle\n" +
+                    "• Mouse: Ricky Kharawala"
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = { showImageCreditsDialog = false }) {
+                    Text("Close")
+                }
+            }
+        )
+    }
+
     if (showEasterEgg) {
         Dialog(
             onDismissRequest = { showEasterEgg = false },
@@ -226,6 +251,13 @@ fun AboutScreen(
                         onClick = {
                             val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/kaixenberg/Julie"))
                             context.startActivity(intent)
+                        }
+                    )
+                    HorizontalDivider()
+                    SettingsActionRow(
+                        title = "Fun Facts Image Credits",
+                        onClick = {
+                            showImageCreditsDialog = true
                         }
                     )
                     HorizontalDivider()

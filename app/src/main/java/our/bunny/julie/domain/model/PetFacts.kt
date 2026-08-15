@@ -57,31 +57,42 @@ object PetFacts {
     )
 
     fun getFactsForSpecies(species: String): List<String> {
-        val normalizedSpecies = when (species.trim().lowercase()) {
-            "bunny", "rabbit" -> "Rabbit"
-            "dog", "puppy" -> "Dog"
-            "cat", "kitten" -> "Cat"
-            "guinea pig", "cavy" -> "Guinea Pig"
-            "mouse", "mice" -> "Mouse"
-            "bird", "parrot", "canary", "cockatiel" -> "Bird"
-            else -> "Other"
-        }
-        
-        // Take up to 5 random facts to keep the carousel manageable, as per spec ("Show at most 4-5 cards")
+        val normalizedSpecies = normalizeSpecies(species)
         val allFacts = facts[normalizedSpecies] ?: facts["Other"] ?: emptyList()
         return allFacts.take(5)
     }
 
-    fun getSpeciesEmoji(species: String) = when (species.trim().lowercase()) {
-        "rabbit", "bunny" -> "🐰"
-        "dog", "puppy" -> "🐶"
-        "cat", "kitten" -> "🐱"
-        "bird", "parrot" -> "🐦"
-        "guinea pig", "hamster" -> "🐹"
-        "mouse", "mice" -> "🐭"
-        "rat" -> "🐀"
-        "reptile" -> "🦎"
-        "fish" -> "🐟"
+    private fun normalizeSpecies(species: String) = when (species.trim().lowercase()) {
+        "bunny", "rabbit" -> "Rabbit"
+        "dog", "puppy" -> "Dog"
+        "cat", "kitten" -> "Cat"
+        "guinea pig", "cavy" -> "Guinea Pig"
+        "mouse", "mice", "hamster" -> "Mouse"
+        "bird", "parrot", "canary", "cockatiel" -> "Bird"
+        else -> "Other"
+    }
+
+    fun getSpeciesEmoji(species: String) = when (normalizeSpecies(species)) {
+        "Rabbit" -> "🐰"
+        "Dog" -> "🐶"
+        "Cat" -> "🐱"
+        "Bird" -> "🐦"
+        "Guinea Pig" -> "🐹"
+        "Mouse" -> "🐭"
         else -> "🐾"
+    }
+
+    data class SpeciesImage(val resourceId: Int, val authorName: String, val source: String = "Unsplash")
+
+    fun getSpeciesImage(species: String): SpeciesImage {
+        return when (normalizeSpecies(species)) {
+            "Dog" -> SpeciesImage(our.bunny.julie.R.drawable.fact_dog, "Charles Deluvio")
+            "Cat" -> SpeciesImage(our.bunny.julie.R.drawable.fact_cat, "Manja Vitolic")
+            "Rabbit" -> SpeciesImage(our.bunny.julie.R.drawable.fact_rabbit, "Satyabratasm")
+            "Bird" -> SpeciesImage(our.bunny.julie.R.drawable.fact_bird, "David Clode")
+            "Guinea Pig" -> SpeciesImage(our.bunny.julie.R.drawable.fact_guinea_pig, "Bonnie Kittle")
+            "Mouse" -> SpeciesImage(our.bunny.julie.R.drawable.fact_mouse, "Ricky Kharawala")
+            else -> SpeciesImage(our.bunny.julie.R.drawable.fact_other, "Mikhail Vasilyev")
+        }
     }
 }
