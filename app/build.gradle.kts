@@ -30,18 +30,21 @@ android {
     productFlavors {
         create("arm64") {
             dimension = "abi"
+            buildConfigField("boolean", "ENABLE_FANCY_UI", "true")
             ndk {
                 abiFilters += "arm64-v8a"
             }
         }
         create("armv7") {
             dimension = "abi"
+            buildConfigField("boolean", "ENABLE_FANCY_UI", "false")
             ndk {
                 abiFilters += "armeabi-v7a"
             }
         }
         create("universal") {
             dimension = "abi"
+            buildConfigField("boolean", "ENABLE_FANCY_UI", "true")
             // No abiFilters, so all ABIs are included
         }
     }

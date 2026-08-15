@@ -60,8 +60,10 @@ class MainActivity : ComponentActivity() {
                     ThemeConfig.SYSTEM -> isSystemInDarkTheme()
                 }
 
+                val isBlurEnabled = if (our.bunny.julie.BuildConfig.ENABLE_FANCY_UI) blurEffects else false
+
                 CompositionLocalProvider(
-                    LocalBlurEnabled provides blurEffects,
+                    LocalBlurEnabled provides isBlurEnabled,
                     LocalPredictiveBackEnabled provides predictiveBack
                 ) {
                     JulieTheme(

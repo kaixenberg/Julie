@@ -669,24 +669,26 @@ fun SettingsScreen(
                     )
                 }
 
-                HorizontalDivider()
+                if (our.bunny.julie.BuildConfig.ENABLE_FANCY_UI) {
+                    HorizontalDivider()
 
-                // Blur Effects
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable { appearanceViewModel.updateBlurEffects(!appearanceUiState.blurEffects) },
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text("Blur Effects", style = MaterialTheme.typography.titleMedium)
-                        Text("Enable UI blur rendering", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    // Blur Effects
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { appearanceViewModel.updateBlurEffects(!appearanceUiState.blurEffects) },
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text("Blur Effects", style = MaterialTheme.typography.titleMedium)
+                            Text("Enable UI blur rendering", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                        Switch(
+                            checked = appearanceUiState.blurEffects,
+                            onCheckedChange = { appearanceViewModel.updateBlurEffects(it) }
+                        )
                     }
-                    Switch(
-                        checked = appearanceUiState.blurEffects,
-                        onCheckedChange = { appearanceViewModel.updateBlurEffects(it) }
-                    )
                 }
             }
         }
