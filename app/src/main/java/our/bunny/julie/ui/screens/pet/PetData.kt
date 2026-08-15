@@ -1,18 +1,18 @@
 package our.bunny.julie.ui.screens.pet
 
 object PetData {
-    val species = listOf("Dog", "Cat", "Rabbit", "Bunny", "Guinea Pig", "Mouse", "Bird", "Other")
+    val species = listOf("Dog", "Cat", "Rabbit", "Guinea Pig", "Mouse", "Bird")
     
     fun getBreedsForSpecies(species: String): List<String> {
-        val list = when (species) {
-            "Dog" -> listOf("Labrador", "Poodle", "Bulldog", "Beagle", "Rottweiler", "Golden Retriever", "German Shepherd")
-            "Cat" -> listOf("Persian", "Maine Coon", "Siamese", "Ragdoll", "Sphynx", "British Shorthair")
-            "Rabbit", "Bunny" -> listOf("Holland Lop", "Rex", "Lionhead", "Flemish Giant", "Netherland Dwarf")
+        return when (species) {
+            "Dog" -> listOf("Mixed", "Labrador Retriever", "German Shepherd", "Golden Retriever", "French Bulldog", "Bulldog", "Poodle", "Beagle", "Rottweiler", "Dachshund")
+            "Cat" -> listOf("Mixed", "Persian", "Maine Coon", "Ragdoll", "Siamese", "British Shorthair", "Sphynx", "Abyssinian", "Scottish Fold", "Bengal")
+            "Rabbit" -> listOf("Holland Lop", "Rex", "Lionhead", "Flemish Giant", "Netherland Dwarf")
             "Guinea Pig" -> listOf("American", "Abyssinian", "Peruvian", "Silkie", "Teddy")
-            "Bird" -> listOf("Parrot", "Canary", "Finch", "Cockatiel", "Lovebird", "Macaw")
+            "Mouse" -> listOf("Fancy Mouse", "Spiny Mouse", "Zebra Mouse", "Deer Mouse")
+            "Bird" -> listOf("Parakeet (Budgie)", "Cockatiel", "Finch", "Canary", "Parrotlet", "Lovebird", "Cockatoo")
             else -> emptyList()
         }
-        return list + "Undetermined"
     }
     
     val sexes = listOf("Male", "Female", "Undetermined")
@@ -21,7 +21,7 @@ object PetData {
         return when (species) {
             "Dog" -> "🐶"
             "Cat" -> "🐱"
-            "Rabbit", "Bunny" -> "🐰"
+            "Rabbit" -> "🐰"
             "Guinea Pig" -> "🐹"
             "Mouse" -> "🐭"
             "Bird" -> "🐦"

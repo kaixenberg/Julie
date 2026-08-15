@@ -46,33 +46,23 @@ object PetFacts {
             "Birds communicate constantly — vocalizations, body language, feathers, and posture can all carry meaning.",
             "Birds need mental stimulation — foraging, toys, exploration, and interaction help satisfy natural behaviors.",
             "A bird's beak is more than a mouth — it is used for eating, climbing, exploring, grooming, and manipulating objects."
-        ),
-        "Other" to listOf(
-            "Every species has different needs — diet, exercise, housing, and healthcare can vary dramatically.",
-            "Your pet's normal behavior is their baseline — knowing what's normal makes unusual changes easier to spot.",
-            "Age matters — a young, adult, and senior pet can have very different care requirements.",
-            "Diet is species-specific — foods that are safe for one animal can be harmful to another.",
-            "Regular observation matters — small changes in eating, drinking, activity, weight, or behavior can be important."
         )
     )
 
     fun getFactsForSpecies(species: String): List<String> {
-        val normalizedSpecies = normalizeSpecies(species)
-        val allFacts = facts[normalizedSpecies] ?: facts["Other"] ?: emptyList()
-        return allFacts.take(5)
+        val normalizedSpecies = when (species.lowercase(java.util.Locale.ROOT).trim()) {
+            "dog", "puppy" -> "Dog"
+            "cat", "kitten" -> "Cat"
+            "rabbit" -> "Rabbit"
+            "guinea pig" -> "Guinea Pig"
+            "mouse", "mice" -> "Mouse"
+            "bird", "parrot" -> "Bird"
+            else -> "" // Unknown species no longer maps to "Other", just return empty
+        }
+        return facts[normalizedSpecies] ?: emptyList()
     }
 
-    private fun normalizeSpecies(species: String) = when (species.trim().lowercase()) {
-        "bunny", "rabbit" -> "Rabbit"
-        "dog", "puppy" -> "Dog"
-        "cat", "kitten" -> "Cat"
-        "guinea pig", "cavy" -> "Guinea Pig"
-        "mouse", "mice", "hamster" -> "Mouse"
-        "bird", "parrot", "canary", "cockatiel" -> "Bird"
-        else -> "Other"
-    }
-
-    fun getSpeciesEmoji(species: String) = when (normalizeSpecies(species)) {
+    fun getSpeciesEmoji(species: String) = when (species) {
         "Rabbit" -> "🐰"
         "Dog" -> "🐶"
         "Cat" -> "🐱"
@@ -85,7 +75,7 @@ object PetFacts {
     data class SpeciesImage(val resourceId: Int, val authorName: String, val source: String = "Unsplash")
 
     fun getSpeciesImage(species: String): SpeciesImage {
-        return when (normalizeSpecies(species)) {
+        return when (species) {
             "Dog" -> SpeciesImage(our.bunny.julie.R.drawable.fact_dog, "Charles Deluvio")
             "Cat" -> SpeciesImage(our.bunny.julie.R.drawable.fact_cat, "Manja Vitolic")
             "Rabbit" -> SpeciesImage(our.bunny.julie.R.drawable.fact_rabbit, "Satyabratasm")
