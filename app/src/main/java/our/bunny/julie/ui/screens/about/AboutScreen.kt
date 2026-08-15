@@ -23,6 +23,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -190,7 +191,7 @@ fun AboutScreen(
                     
                     Spacer(modifier = Modifier.height(16.dp))
                     Text(
-                        text = "Julie",
+                        text = stringResource(id = R.string.app_name),
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface
@@ -200,6 +201,12 @@ fun AboutScreen(
                         text = "v${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(
+                        text = BuildConfig.APPLICATION_ID,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.outline
                     )
                 }
             }

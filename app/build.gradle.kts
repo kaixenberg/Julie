@@ -48,19 +48,15 @@ android {
 
     signingConfigs {
         create("release") {
-            val storeFileEnv = System.getenv("JULIE_STORE_FILE")
-            if (storeFileEnv != null && file(storeFileEnv).exists()) {
-                storeFile = file(storeFileEnv)
-                storePassword = System.getenv("JULIE_STORE_PASSWORD")
-                keyAlias = System.getenv("JULIE_KEY_ALIAS")
-                keyPassword = System.getenv("JULIE_KEY_PASSWORD")
+            // Read from project properties (from ~/.gradle/gradle.properties) or environment variables
+            val storeFilePath = project.findProperty("JULIE_STORE_FILE")?.toString() ?: System.getenv("JULIE_STORE_FILE")
+            if (storeFilePath != null && file(storeFilePath).exists()) {
+                storeFile = file(storeFilePath)
+                storePassword = project.findProperty("JULIE_STORE_PASSWORD")?.toString() ?: System.getenv("JULIE_STORE_PASSWORD")
+                keyAlias = project.findProperty("JULIE_KEY_ALIAS")?.toString() ?: System.getenv("JULIE_KEY_ALIAS")
+                keyPassword = project.findProperty("JULIE_KEY_PASSWORD")?.toString() ?: System.getenv("JULIE_KEY_PASSWORD")
             } else {
-                // Fallback to debug keystore so local release testing works
-                val debugConfig = getByName("debug")
-                storeFile = debugConfig.storeFile
-                storePassword = debugConfig.storePassword
-                keyAlias = debugConfig.keyAlias
-                keyPassword = debugConfig.keyPassword
+                throw GradleException("Release keystore not found or credentials not provided. Set JULIE_STORE_FILE, JULIE_STORE_PASSWORD, JULIE_KEY_ALIAS, JULIE_KEY_PASSWORD in ~/.gradle/gradle.properties or env vars.")
             }
         }
     }
@@ -74,6 +70,10 @@ android {
                 "proguard-rules.pro"
             )
             signingConfig = signingConfigs.getByName("release")
+            resValue("string", "app_name", "Julie")
+        }
+        debug {
+            resValue("string", "app_name", "Julie Debug")
         }
     }
     compileOptions {
@@ -92,6 +92,15 @@ android {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }
     }
+}
+
+androidComponents {
+    onVariants(selector().withBuildType("debug")) { variant ->
+        variant.applicationId.set("our.rabbit.julie")
+    }
+}
+
+android {
     applicationVariants.all {
         val variant = this
         variant.outputs.all {
