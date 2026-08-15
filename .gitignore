@@ -26,3 +26,4 @@ Plans/
 *.claude/
 .copilot/
 app/julie-release.jks
+outputs/
