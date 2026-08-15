@@ -20,6 +20,8 @@ import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.outlined.CloudUpload
 import androidx.compose.material.icons.outlined.CloudDownload
+import androidx.compose.material.icons.outlined.Folder
+import androidx.compose.material.icons.outlined.Schedule
 import android.app.TimePickerDialog
 import android.net.Uri
 
@@ -61,6 +63,8 @@ fun SettingsScreen(
     val context = LocalContext.current
     val alarmManager = remember { context.getSystemService(Context.ALARM_SERVICE) as AlarmManager }
     val snackbarHostState = remember { SnackbarHostState() }
+    
+    val backupRestoreUiState by backupRestoreViewModel.uiState.collectAsState()
 
     // Battery optimization state
     var isIgnoringBatteryOptimizations by remember {
@@ -96,10 +100,13 @@ fun SettingsScreen(
     LaunchedEffect(Unit) {
         backupRestoreViewModel.events.collect { event ->
             when (event) {
-                is BackupRestoreEvent.ExportSuccess -> snackbarHostState.showSnackbar("Backup exported successfully")
+                is BackupRestoreEvent.ExportSuccess -> snackbarHostState.showSnackbar("Backup exported successfully to ${event.message}")
                 is BackupRestoreEvent.ExportError -> snackbarHostState.showSnackbar("Export failed: ${event.message}")
                 is BackupRestoreEvent.ImportSuccess -> snackbarHostState.showSnackbar("Data restored successfully")
                 is BackupRestoreEvent.ImportError -> snackbarHostState.showSnackbar("Restore failed: ${event.message}")
+                is BackupRestoreEvent.PassphraseRequired -> {
+                    // This event is handled via state below
+                }
             }
         }
     }
@@ -116,9 +123,18 @@ fun SettingsScreen(
 
     var showRestoreConfirmDialog by remember { mutableStateOf(false) }
     var restoreUri by remember { mutableStateOf<Uri?>(null) }
-    val exportLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { uri ->
+    
+    var showBackupPassphraseDialog by remember { mutableStateOf(false) }
+    var showRestorePassphraseDialog by remember { mutableStateOf(false) }
+    var passphraseInput by remember { mutableStateOf("") }
+    var passphraseConfirmInput by remember { mutableStateOf("") }
+    var passphraseError by remember { mutableStateOf<String?>(null) }
+
+    val folderPickerLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
         if (uri != null) {
-            backupRestoreViewModel.exportData(uri)
+            val flags = Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+            context.contentResolver.takePersistableUriPermission(uri, flags)
+            backupRestoreViewModel.updateBackupFolderUri(uri.toString())
         }
     }
     
@@ -126,6 +142,16 @@ fun SettingsScreen(
         if (uri != null) {
             restoreUri = uri
             showRestoreConfirmDialog = true
+        }
+    }
+
+    LaunchedEffect(backupRestoreViewModel.events) {
+        backupRestoreViewModel.events.collect { event ->
+            if (event is BackupRestoreEvent.PassphraseRequired) {
+                showRestoreConfirmDialog = false
+                showRestorePassphraseDialog = true
+                restoreUri = event.uri
+            }
         }
     }
 
@@ -138,17 +164,132 @@ fun SettingsScreen(
             title = { Text("Restore Data") },
             text = { Text("This will overwrite existing data for matching pets. Are you sure you want to continue?") },
             confirmButton = {
-                TextButton(onClick = {
-                    restoreUri?.let { backupRestoreViewModel.importData(it) }
-                    showRestoreConfirmDialog = false
-                    restoreUri = null
-                }) {
+                TextButton(
+                    onClick = {
+                        showRestoreConfirmDialog = false
+                        restoreUri?.let { backupRestoreViewModel.importData(it) }
+                    }
+                ) {
                     Text("Restore")
                 }
             },
             dismissButton = {
                 TextButton(onClick = { 
                     showRestoreConfirmDialog = false 
+                    restoreUri = null
+                }) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
+
+    if (showBackupPassphraseDialog) {
+        AlertDialog(
+            onDismissRequest = {
+                showBackupPassphraseDialog = false
+                passphraseInput = ""
+                passphraseConfirmInput = ""
+                passphraseError = null
+            },
+            title = { Text("Encrypt Backup") },
+            text = {
+                Column {
+                    Text("Enter a strong passphrase to encrypt your backup. If you lose this, you cannot restore your data.")
+                    Spacer(modifier = Modifier.height(16.dp))
+                    OutlinedTextField(
+                        value = passphraseInput,
+                        onValueChange = { passphraseInput = it; passphraseError = null },
+                        label = { Text("Passphrase") },
+                        singleLine = true,
+                        visualTransformation = androidx.compose.ui.text.input.PasswordVisualTransformation()
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    OutlinedTextField(
+                        value = passphraseConfirmInput,
+                        onValueChange = { passphraseConfirmInput = it; passphraseError = null },
+                        label = { Text("Confirm Passphrase") },
+                        singleLine = true,
+                        visualTransformation = androidx.compose.ui.text.input.PasswordVisualTransformation(),
+                        isError = passphraseError != null
+                    )
+                    if (passphraseError != null) {
+                        Text(passphraseError!!, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        if (passphraseInput.isEmpty()) {
+                            passphraseError = "Passphrase cannot be empty"
+                        } else if (passphraseInput != passphraseConfirmInput) {
+                            passphraseError = "Passphrases do not match"
+                        } else {
+                            showBackupPassphraseDialog = false
+                            backupRestoreViewModel.exportData(passphraseInput.toCharArray())
+                            passphraseInput = ""
+                            passphraseConfirmInput = ""
+                            passphraseError = null
+                        }
+                    }
+                ) {
+                    Text("Backup")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { 
+                    showBackupPassphraseDialog = false
+                    passphraseInput = ""
+                    passphraseConfirmInput = ""
+                    passphraseError = null
+                }) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
+
+    if (showRestorePassphraseDialog) {
+        AlertDialog(
+            onDismissRequest = {
+                showRestorePassphraseDialog = false
+                passphraseInput = ""
+                passphraseError = null
+                restoreUri = null
+            },
+            title = { Text("Encrypted Backup") },
+            text = {
+                Column {
+                    Text("This backup is encrypted. Please enter the passphrase to restore.")
+                    Spacer(modifier = Modifier.height(16.dp))
+                    OutlinedTextField(
+                        value = passphraseInput,
+                        onValueChange = { passphraseInput = it },
+                        label = { Text("Passphrase") },
+                        singleLine = true,
+                        visualTransformation = androidx.compose.ui.text.input.PasswordVisualTransformation()
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        if (passphraseInput.isNotEmpty()) {
+                            showRestorePassphraseDialog = false
+                            restoreUri?.let { backupRestoreViewModel.importData(it, passphraseInput.toCharArray()) }
+                            passphraseInput = ""
+                            restoreUri = null
+                        }
+                    }
+                ) {
+                    Text("Decrypt & Restore")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { 
+                    showRestorePassphraseDialog = false
+                    passphraseInput = ""
                     restoreUri = null
                 }) {
                     Text("Cancel")
@@ -757,12 +898,108 @@ fun SettingsScreen(
         Text("Backup & Export", style = MaterialTheme.typography.titleLarge)
         Card(modifier = Modifier.fillMaxWidth()) {
             Column(modifier = Modifier.fillMaxWidth()) {
+                val locationName = if (backupRestoreUiState.backupFolderUri.isNullOrEmpty()) {
+                    "Not set — using Downloads"
+                } else {
+                    try {
+                        val uri = android.net.Uri.parse(backupRestoreUiState.backupFolderUri)
+                        androidx.documentfile.provider.DocumentFile.fromTreeUri(context, uri)?.name ?: "Custom Folder"
+                    } catch (e: Exception) {
+                        "Custom Folder"
+                    }
+                }
+                SettingsActionRow(
+                    icon = Icons.Outlined.Folder,
+                    title = "Backup Location",
+                    subtitle = locationName,
+                    onClick = { folderPickerLauncher.launch(null) }
+                )
+                HorizontalDivider()
+                
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { backupRestoreViewModel.updateEncryptedBackupEnabled(!backupRestoreUiState.isEncrypted) }
+                        .padding(16.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text("Encrypt Backup", style = MaterialTheme.typography.titleMedium)
+                        Text("Protect backup with a passphrase", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                    Switch(
+                        checked = backupRestoreUiState.isEncrypted,
+                        onCheckedChange = { backupRestoreViewModel.updateEncryptedBackupEnabled(it) }
+                    )
+                }
+                HorizontalDivider()
+
+                val autoBackupEnabled = backupRestoreUiState.isAutoBackupEnabled
+                val isEncrypted = backupRestoreUiState.isEncrypted
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .then(if (isEncrypted) Modifier else Modifier.clickable { backupRestoreViewModel.updateAutoBackupEnabled(!autoBackupEnabled) })
+                        .padding(16.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text("Auto Backup", style = MaterialTheme.typography.titleMedium, color = if (isEncrypted) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f) else MaterialTheme.colorScheme.onSurface)
+                        Text(if (isEncrypted) "Disabled when Encrypted Backup is ON" else "Automatically backup daily", style = MaterialTheme.typography.bodyMedium, color = if (isEncrypted) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                    Switch(
+                        checked = autoBackupEnabled && !isEncrypted,
+                        onCheckedChange = { backupRestoreViewModel.updateAutoBackupEnabled(it) },
+                        enabled = !isEncrypted
+                    )
+                }
+
+                AnimatedVisibility(visible = autoBackupEnabled && !isEncrypted) {
+                    Column {
+                        HorizontalDivider()
+                        SettingsActionRow(
+                            icon = Icons.Outlined.Schedule,
+                            title = "Auto Backup Time",
+                            subtitle = String.format("%02d:%02d", backupRestoreUiState.autoBackupTimeMinutes / 60, backupRestoreUiState.autoBackupTimeMinutes % 60),
+                            onClick = {
+                                val currentHour = backupRestoreUiState.autoBackupTimeMinutes / 60
+                                val currentMinute = backupRestoreUiState.autoBackupTimeMinutes % 60
+                                android.app.TimePickerDialog(
+                                    context,
+                                    { _, hourOfDay, minute ->
+                                        backupRestoreViewModel.updateAutoBackupTimeMinutes(hourOfDay * 60 + minute)
+                                    },
+                                    currentHour,
+                                    currentMinute,
+                                    false
+                                ).show()
+                            }
+                        )
+                        if (backupRestoreUiState.lastAutoBackupTimestamp != null) {
+                            Text(
+                                text = "Last backup: ${backupRestoreUiState.lastAutoBackupTimestamp}\nStatus: ${backupRestoreUiState.lastAutoBackupStatus}",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+                            )
+                        }
+                    }
+                }
+
+                HorizontalDivider()
+
                 SettingsActionRow(
                     icon = Icons.Outlined.CloudUpload,
-                    title = "Backup Data",
+                    title = "Backup Now",
                     subtitle = "Export all pets and history",
                     onClick = { 
-                        exportLauncher.launch("julie_backup_${System.currentTimeMillis()}.json")
+                        if (backupRestoreUiState.isEncrypted) {
+                            showBackupPassphraseDialog = true
+                        } else {
+                            backupRestoreViewModel.exportData()
+                        }
                     }
                 )
                 HorizontalDivider()
@@ -771,7 +1008,7 @@ fun SettingsScreen(
                     title = "Restore Data",
                     subtitle = "Import data from a backup file",
                     onClick = { 
-                        importLauncher.launch(arrayOf("application/json", "*/*"))
+                        importLauncher.launch(arrayOf("application/json", "application/octet-stream", "*/*"))
                     }
                 )
             }

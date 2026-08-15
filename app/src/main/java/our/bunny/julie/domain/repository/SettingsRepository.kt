@@ -43,6 +43,12 @@ class SettingsRepository @Inject constructor(
         val REMINDERS_WEIGHT_INTERVAL_DAYS = androidx.datastore.preferences.core.intPreferencesKey("reminders_weight_interval_days")
         val REMINDERS_WATER_INTERVAL_HOURS = androidx.datastore.preferences.core.intPreferencesKey("reminders_water_interval_hours")
         val REMINDERS_FEEDING_TIMES = androidx.datastore.preferences.core.stringSetPreferencesKey("reminders_feeding_times")
+        val BACKUP_FOLDER_URI = stringPreferencesKey("backup_folder_uri")
+        val ENCRYPTED_BACKUP_ENABLED = booleanPreferencesKey("encrypted_backup_enabled")
+        val AUTO_BACKUP_ENABLED = booleanPreferencesKey("auto_backup_enabled")
+        val AUTO_BACKUP_TIME_MINUTES = androidx.datastore.preferences.core.intPreferencesKey("auto_backup_time_minutes")
+        val LAST_AUTO_BACKUP_TIMESTAMP = stringPreferencesKey("last_auto_backup_timestamp")
+        val LAST_AUTO_BACKUP_STATUS = stringPreferencesKey("last_auto_backup_status")
     }
 
     val weightUnitFlow: Flow<WeightUnit> = context.dataStore.data.map { preferences ->
@@ -111,6 +117,31 @@ class SettingsRepository @Inject constructor(
 
     val blurEffectsFlow: Flow<Boolean> = context.dataStore.data.map { preferences ->
         preferences[PreferencesKeys.BLUR_EFFECTS] ?: false
+    }
+
+    val backupFolderUriFlow: Flow<String?> = context.dataStore.data.map { preferences ->
+        preferences[PreferencesKeys.BACKUP_FOLDER_URI]
+    }
+
+    val encryptedBackupEnabledFlow: Flow<Boolean> = context.dataStore.data.map { preferences ->
+        preferences[PreferencesKeys.ENCRYPTED_BACKUP_ENABLED] ?: false
+    }
+
+    val autoBackupEnabledFlow: Flow<Boolean> = context.dataStore.data.map { preferences ->
+        preferences[PreferencesKeys.AUTO_BACKUP_ENABLED] ?: false
+    }
+
+    // Default to 2:00 AM (120 minutes past midnight)
+    val autoBackupTimeMinutesFlow: Flow<Int> = context.dataStore.data.map { preferences ->
+        preferences[PreferencesKeys.AUTO_BACKUP_TIME_MINUTES] ?: 120
+    }
+
+    val lastAutoBackupTimestampFlow: Flow<String?> = context.dataStore.data.map { preferences ->
+        preferences[PreferencesKeys.LAST_AUTO_BACKUP_TIMESTAMP]
+    }
+
+    val lastAutoBackupStatusFlow: Flow<String?> = context.dataStore.data.map { preferences ->
+        preferences[PreferencesKeys.LAST_AUTO_BACKUP_STATUS]
     }
 
     suspend fun updateThemeConfig(config: ThemeConfig) {
@@ -252,6 +283,41 @@ class SettingsRepository @Inject constructor(
     suspend fun updateRemindersFeedingTimes(times: Set<String>) {
         context.dataStore.edit { preferences ->
             preferences[PreferencesKeys.REMINDERS_FEEDING_TIMES] = times
+        }
+    }
+
+    suspend fun updateBackupFolderUri(uri: String?) {
+        context.dataStore.edit { preferences ->
+            if (uri == null) {
+                preferences.remove(PreferencesKeys.BACKUP_FOLDER_URI)
+            } else {
+                preferences[PreferencesKeys.BACKUP_FOLDER_URI] = uri
+            }
+        }
+    }
+
+    suspend fun updateEncryptedBackupEnabled(enabled: Boolean) {
+        context.dataStore.edit { preferences ->
+            preferences[PreferencesKeys.ENCRYPTED_BACKUP_ENABLED] = enabled
+        }
+    }
+
+    suspend fun updateAutoBackupEnabled(enabled: Boolean) {
+        context.dataStore.edit { preferences ->
+            preferences[PreferencesKeys.AUTO_BACKUP_ENABLED] = enabled
+        }
+    }
+
+    suspend fun updateAutoBackupTimeMinutes(minutes: Int) {
+        context.dataStore.edit { preferences ->
+            preferences[PreferencesKeys.AUTO_BACKUP_TIME_MINUTES] = minutes
+        }
+    }
+
+    suspend fun updateLastAutoBackupInfo(timestamp: String, status: String) {
+        context.dataStore.edit { preferences ->
+            preferences[PreferencesKeys.LAST_AUTO_BACKUP_TIMESTAMP] = timestamp
+            preferences[PreferencesKeys.LAST_AUTO_BACKUP_STATUS] = status
         }
     }
 }

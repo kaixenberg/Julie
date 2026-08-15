@@ -37,6 +37,10 @@
             android:name=".receiver.WeightAlarmReceiver"
             android:exported="false" />
             
+        <receiver
+            android:name=".receiver.BackupAlarmReceiver"
+            android:exported="false" />
+            
         <receiver android:name=".receiver.BootReceiver" android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED" />

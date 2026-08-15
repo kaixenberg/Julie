@@ -9,6 +9,8 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import our.bunny.julie.data.local.PetDatabase
 import our.bunny.julie.domain.model.*
+import our.bunny.julie.manager.BackupStorageManager
+import our.bunny.julie.util.CryptoUtils
 import java.io.InputStream
 import java.io.OutputStream
 import java.time.LocalDateTime
@@ -19,13 +21,18 @@ import javax.inject.Singleton
 @Singleton
 class BackupRestoreManager @Inject constructor(
     @ApplicationContext private val context: Context,
-    private val database: PetDatabase
+    private val database: PetDatabase,
+    private val backupStorageManager: BackupStorageManager
 ) {
 
     private val json = Json { ignoreUnknownKeys = true; prettyPrint = true }
 
-    suspend fun exportData(outputUri: Uri): Result<Unit> = withContext(Dispatchers.IO) {
+    suspend fun exportData(configuredUriString: String?, isEncrypted: Boolean, passphrase: CharArray?): Result<String> = withContext(Dispatchers.IO) {
         try {
+            if (isEncrypted && (passphrase == null || passphrase.isEmpty())) {
+                return@withContext Result.failure(Exception("Passphrase required for encrypted backup"))
+            }
+
             val dao = database.backupRestoreDao
 
             val backupData = BackupData(
@@ -59,22 +66,46 @@ class BackupRestoreManager @Inject constructor(
 
             val jsonString = json.encodeToString(backupData)
 
-            context.contentResolver.openOutputStream(outputUri)?.use { outputStream ->
-                outputStream.write(jsonString.toByteArray())
-                outputStream.flush()
-            } ?: return@withContext Result.failure(Exception("Could not open output stream"))
+            val (outputStream, statusMsg) = backupStorageManager.createBackupOutputStream(configuredUriString, isEncrypted)
+            
+            if (outputStream == null) {
+                return@withContext Result.failure(Exception("Failed to create backup file: $statusMsg"))
+            }
 
-            Result.success(Unit)
+            outputStream.use { stream ->
+                if (isEncrypted && passphrase != null) {
+                    CryptoUtils.encryptBackup(jsonString, passphrase, stream)
+                } else {
+                    stream.write(jsonString.toByteArray(Charsets.UTF_8))
+                    stream.flush()
+                }
+            }
+
+            Result.success(statusMsg)
         } catch (e: Exception) {
             e.printStackTrace()
             Result.failure(e)
         }
     }
 
-    suspend fun importData(inputUri: Uri): Result<Unit> = withContext(Dispatchers.IO) {
+    suspend fun importData(inputUri: Uri, passphrase: CharArray?): Result<Unit> = withContext(Dispatchers.IO) {
         try {
+            val isEncrypted = context.contentResolver.openInputStream(inputUri)?.use { stream ->
+                java.io.BufferedInputStream(stream).use { bufferedStream ->
+                    CryptoUtils.isEncryptedBackup(bufferedStream)
+                }
+            } ?: return@withContext Result.failure(Exception("Could not open input stream"))
+
+            if (isEncrypted && (passphrase == null || passphrase.isEmpty())) {
+                return@withContext Result.failure(Exception("PASSPHRASE_REQUIRED"))
+            }
+
             val jsonString = context.contentResolver.openInputStream(inputUri)?.use { inputStream ->
-                inputStream.bufferedReader().use { it.readText() }
+                if (isEncrypted && passphrase != null) {
+                    CryptoUtils.decryptBackup(inputStream, passphrase)
+                } else {
+                    inputStream.bufferedReader().use { it.readText() }
+                }
             } ?: return@withContext Result.failure(Exception("Could not open input stream"))
 
             val backupData = json.decodeFromString<BackupData>(jsonString)

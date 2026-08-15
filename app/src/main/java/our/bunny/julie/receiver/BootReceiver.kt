@@ -9,6 +9,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import our.bunny.julie.manager.MedicationReminderManager
 import our.bunny.julie.manager.StatReminderManager
+import our.bunny.julie.manager.BackupAlarmManager
 import javax.inject.Inject
 
 @AndroidEntryPoint
@@ -20,11 +21,15 @@ class BootReceiver : BroadcastReceiver() {
     @Inject
     lateinit var statReminderManager: StatReminderManager
 
+    @Inject
+    lateinit var backupAlarmManager: BackupAlarmManager
+
     override fun onReceive(context: Context, intent: Intent) {
         if (intent.action == Intent.ACTION_BOOT_COMPLETED) {
             CoroutineScope(Dispatchers.IO).launch {
                 reminderManager.rescheduleAll()
                 statReminderManager.rescheduleAll()
+                backupAlarmManager.scheduleNextAutoBackup()
             }
         }
     }
