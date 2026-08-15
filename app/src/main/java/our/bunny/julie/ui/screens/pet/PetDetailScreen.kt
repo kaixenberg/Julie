@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.*
@@ -118,6 +119,67 @@ fun PetDetailScreen(
                                 Icon(Icons.Default.Done, contentDescription = "Save PDF")
                             }
                         }
+                        
+                        // Add Widget Button
+                        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                            val appWidgetManager = android.appwidget.AppWidgetManager.getInstance(context)
+                            if (appWidgetManager.isRequestPinAppWidgetSupported) {
+                                var showWidgetSizeDialog by remember { mutableStateOf(false) }
+
+                                IconButton(onClick = {
+                                    showWidgetSizeDialog = true
+                                }) {
+                                    Icon(Icons.Default.Add, contentDescription = "Add Widget")
+                                }
+
+                                if (showWidgetSizeDialog) {
+                                    AlertDialog(
+                                        onDismissRequest = { showWidgetSizeDialog = false },
+                                        title = { Text("Choose Widget Size") },
+                                        text = { Text("Select the size of the widget you want to pin to your home screen.") },
+                                        confirmButton = {
+                                            TextButton(onClick = {
+                                                showWidgetSizeDialog = false
+                                                val componentName = android.content.ComponentName(context, our.bunny.julie.widget.PetStatWidget2x2Provider::class.java)
+                                                val intent = Intent(context, our.bunny.julie.widget.WidgetPinReceiver::class.java).apply {
+                                                    action = "our.bunny.julie.ACTION_WIDGET_PINNED"
+                                                    putExtra("EXTRA_PET_ID", pet.id)
+                                                    putExtra("EXTRA_STAT_MODE", "Weight")
+                                                    putExtra("EXTRA_PROVIDER_CLASS", "our.bunny.julie.widget.PetStatWidget2x2Provider")
+                                                }
+                                                val successCallback = android.app.PendingIntent.getBroadcast(
+                                                    context, pet.id.toInt(), intent,
+                                                    android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_MUTABLE
+                                                )
+                                                appWidgetManager.requestPinAppWidget(componentName, null, successCallback)
+                                            }) {
+                                                Text("Small (2x2)")
+                                            }
+                                        },
+                                        dismissButton = {
+                                            TextButton(onClick = {
+                                                showWidgetSizeDialog = false
+                                                val componentName = android.content.ComponentName(context, our.bunny.julie.widget.PetStatWidget4x2Provider::class.java)
+                                                val intent = Intent(context, our.bunny.julie.widget.WidgetPinReceiver::class.java).apply {
+                                                    action = "our.bunny.julie.ACTION_WIDGET_PINNED"
+                                                    putExtra("EXTRA_PET_ID", pet.id)
+                                                    putExtra("EXTRA_STAT_MODE", "Weight")
+                                                    putExtra("EXTRA_PROVIDER_CLASS", "our.bunny.julie.widget.PetStatWidget4x2Provider")
+                                                }
+                                                val successCallback = android.app.PendingIntent.getBroadcast(
+                                                    context, pet.id.toInt() + 1000, intent,
+                                                    android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_MUTABLE
+                                                )
+                                                appWidgetManager.requestPinAppWidget(componentName, null, successCallback)
+                                            }) {
+                                                Text("Large (4x2)")
+                                            }
+                                        }
+                                    )
+                                }
+                            }
+                        }
+
                         IconButton(onClick = { onNavigateToEditPet(pet.id) }) {
                             Icon(Icons.Default.Edit, contentDescription = "Edit Pet")
                         }

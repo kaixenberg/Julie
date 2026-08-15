@@ -137,6 +137,7 @@ object WidgetUIBuilder {
             if (pet != null) {
                 setWidgetText(context, headerView, R.id.widget_pet_header_emoji, getSpeciesEmoji(pet.species), false, useSystemFont)
                 setWidgetText(context, headerView, R.id.widget_pet_header_name, pet.name, true, useSystemFont)
+                setDeepLinkIntentForHeader(context, headerView, appWidgetId, pet.id)
             } else {
                 setWidgetText(context, headerView, R.id.widget_pet_header_emoji, "❌", false, useSystemFont)
                 setWidgetText(context, headerView, R.id.widget_pet_header_name, "Pet Not Found", true, useSystemFont)
@@ -155,14 +156,15 @@ object WidgetUIBuilder {
                     }
                     
                     val rowView = RemoteViews(context.packageName, R.layout.widget_container_horizontal)
-                    rowConfigs.forEachIndexed { index, config ->
-                        if (index > 0) {
+                    rowConfigs.forEachIndexed { colIndex, config ->
+                        if (colIndex > 0) {
                             val vDivider = RemoteViews(context.packageName, R.layout.widget_vertical_divider)
                             vDivider.setInt(R.id.widget_divider, "setBackgroundColor", dividerColor)
                             rowView.addView(R.id.widget_container_root, vDivider)
                         }
                         
-                        val cellView = buildStatCell(context, ep, config, pet, appWidgetId, index, primaryTextColor, secondaryTextColor, useSystemFont)
+                        val absoluteIndex = rowIndex * 2 + colIndex
+                        val cellView = buildStatCell(context, ep, config, pet, appWidgetId, absoluteIndex, primaryTextColor, secondaryTextColor, useSystemFont)
                         val weightContainer = RemoteViews(context.packageName, R.layout.widget_container_weight)
                         weightContainer.addView(R.id.widget_container_root, cellView)
                         rowView.addView(R.id.widget_container_root, weightContainer)
@@ -223,7 +225,7 @@ object WidgetUIBuilder {
                 val unit = settingsRepo.weightUnitFlow.firstOrNull() ?: WeightUnit.KG
                 setWidgetText(context, views, R.id.widget_stat_value, latest?.let { UnitFormatter.formatWeight(it.weight, unit) } ?: "--", true, useSystemFont)
                 setWidgetText(context, views, R.id.widget_stat_context, "Latest", false, useSystemFont)
-                setDeepLinkIntent(context, views, appWidgetId, slotIndex, pet.id, "weight")
+                setDeepLinkIntent(context, views, appWidgetId, slotIndex, pet.id, "Weight")
             }
             "Water" -> {
                 setWidgetText(context, views, R.id.widget_stat_label, "Water", false, useSystemFont)
@@ -231,21 +233,21 @@ object WidgetUIBuilder {
                 val unit = settingsRepo.waterUnitFlow.firstOrNull() ?: WaterUnit.ML
                 setWidgetText(context, views, R.id.widget_stat_value, UnitFormatter.formatWater(total, unit), true, useSystemFont)
                 setWidgetText(context, views, R.id.widget_stat_context, "Today", false, useSystemFont)
-                setDeepLinkIntent(context, views, appWidgetId, slotIndex, pet.id, "water")
+                setDeepLinkIntent(context, views, appWidgetId, slotIndex, pet.id, "Water")
             }
             "Feeding" -> {
                 setWidgetText(context, views, R.id.widget_stat_label, "Feeding", false, useSystemFont)
                 val latest = trackerRepo.getLatestFeedingLog(pet.id).firstOrNull()
                 setWidgetText(context, views, R.id.widget_stat_value, latest?.let { "${it.quantity} ${it.unit}" } ?: "--", true, useSystemFont)
                 setWidgetText(context, views, R.id.widget_stat_context, latest?.food ?: "No data", false, useSystemFont)
-                setDeepLinkIntent(context, views, appWidgetId, slotIndex, pet.id, "feeding")
+                setDeepLinkIntent(context, views, appWidgetId, slotIndex, pet.id, "Feeding")
             }
             "Medication" -> {
                 setWidgetText(context, views, R.id.widget_stat_label, "Medication", false, useSystemFont)
                 val meds = trackerRepo.getMedicationsForPet(pet.id).firstOrNull() ?: emptyList()
                 setWidgetText(context, views, R.id.widget_stat_value, "${meds.count { it.isActive }}", true, useSystemFont)
                 setWidgetText(context, views, R.id.widget_stat_context, "Active", false, useSystemFont)
-                setDeepLinkIntent(context, views, appWidgetId, slotIndex, pet.id, "medication")
+                setDeepLinkIntent(context, views, appWidgetId, slotIndex, pet.id, "Medication")
             }
         }
         return views
@@ -282,7 +284,7 @@ object WidgetUIBuilder {
         petId: Long,
         trackerType: String
     ) {
-        val uri = Uri.parse("julie://pet/$petId/$trackerType")
+        val uri = Uri.parse("julieapp://pet_stat_detail/$petId/$trackerType")
         val intent = Intent(Intent.ACTION_VIEW, uri).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
         }
@@ -291,6 +293,23 @@ object WidgetUIBuilder {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
         views.setOnClickPendingIntent(R.id.widget_stat_cell_root, pi)
+    }
+
+    private fun setDeepLinkIntentForHeader(
+        context: Context,
+        views: RemoteViews,
+        appWidgetId: Int,
+        petId: Long
+    ) {
+        val uri = Uri.parse("julieapp://pet_detail/$petId")
+        val intent = Intent(Intent.ACTION_VIEW, uri).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+        }
+        val pi = PendingIntent.getActivity(
+            context, appWidgetId * 10 + 9, intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+        views.setOnClickPendingIntent(R.id.widget_pet_header_root, pi)
     }
 
     private fun getSpeciesEmoji(species: String) = when (species.lowercase()) {

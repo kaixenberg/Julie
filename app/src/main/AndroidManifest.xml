@@ -58,6 +58,11 @@
                 android:name="android.appwidget.provider"
                 android:resource="@xml/widget_pet_stat_4x2_info" />
         </receiver>
+
+        <receiver
+            android:name=".widget.WidgetPinReceiver"
+            android:exported="false" />
+
             
         <receiver android:name=".receiver.BootReceiver" android:exported="true">
             <intent-filter>
@@ -80,6 +85,19 @@
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data android:scheme="julie" android:host="pet" />
+            </intent-filter>
+            <!-- Deep Link for Widget Tap-Throughs -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="julieapp" android:host="pet_stat_detail" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="julieapp" android:host="pet_detail" />
             </intent-filter>
         </activity>
         

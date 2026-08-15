@@ -99,7 +99,10 @@ fun AppNavigation(navController: NavHostController, onOpenDrawer: () -> Unit) {
         }
         composable(
             route = Screen.PetDetail.route,
-            arguments = listOf(navArgument("petId") { type = NavType.LongType })
+            arguments = listOf(navArgument("petId") { type = NavType.LongType }),
+            deepLinks = listOf(
+                androidx.navigation.navDeepLink { uriPattern = "julieapp://pet_detail/{petId}" }
+            )
         ) { backStackEntry ->
             val petId = backStackEntry.arguments?.getLong("petId") ?: -1L
             our.bunny.julie.ui.screens.pet.PetDetailScreen(
