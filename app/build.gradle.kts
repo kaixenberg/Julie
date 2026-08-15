@@ -46,6 +46,25 @@ android {
         }
     }
 
+    signingConfigs {
+        create("release") {
+            val storeFileEnv = System.getenv("JULIE_STORE_FILE")
+            if (storeFileEnv != null && file(storeFileEnv).exists()) {
+                storeFile = file(storeFileEnv)
+                storePassword = System.getenv("JULIE_STORE_PASSWORD")
+                keyAlias = System.getenv("JULIE_KEY_ALIAS")
+                keyPassword = System.getenv("JULIE_KEY_PASSWORD")
+            } else {
+                // Fallback to debug keystore so local release testing works
+                val debugConfig = getByName("debug")
+                storeFile = debugConfig.storeFile
+                storePassword = debugConfig.storePassword
+                keyAlias = debugConfig.keyAlias
+                keyPassword = debugConfig.keyPassword
+            }
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = true
@@ -54,6 +73,7 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            signingConfig = signingConfigs.getByName("release")
         }
     }
     compileOptions {
