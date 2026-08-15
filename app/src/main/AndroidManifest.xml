@@ -41,6 +41,24 @@
             android:name=".receiver.BackupAlarmReceiver"
             android:exported="false" />
             
+        <receiver android:name=".widget.PetStatWidget2x2Provider" android:exported="false">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_pet_stat_2x2_info" />
+        </receiver>
+
+        <receiver android:name=".widget.PetStatWidget4x2Provider" android:exported="false">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_pet_stat_4x2_info" />
+        </receiver>
+            
         <receiver android:name=".receiver.BootReceiver" android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
@@ -55,6 +73,22 @@
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <!-- Deep Link for Pet Detail/Stats -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="julie" android:host="pet" />
+            </intent-filter>
+        </activity>
+        
+        <activity
+            android:name=".ui.screens.widget.WidgetConfigureActivity"
+            android:exported="true"
+            android:theme="@style/Theme.Julie">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE" />
             </intent-filter>
         </activity>
 
