@@ -203,76 +203,98 @@ fun PetDetailScreen(
             ) {
                 CircularProgressIndicator()
             }
-        } else if (uiState.pet != null) {
-            val pet = uiState.pet!!
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(paddingValues)
-                    .verticalScroll(rememberScrollState())
-                    .padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                // Header section
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    PetAvatar(species = pet.species)
-                    Spacer(modifier = Modifier.width(16.dp))
-                    Column {
-                        Text(
-                            text = pet.name,
-                            style = MaterialTheme.typography.headlineMedium,
-                            fontWeight = FontWeight.Bold
+            }
+
+            if (uiState.pet != null) {
+                val pet = uiState.pet!!
+                var showFactsDialog by remember { mutableStateOf(false) }
+
+                if (showFactsDialog) {
+                    PetFactsCarousel(
+                        species = pet.species,
+                        onDismiss = { showFactsDialog = false }
+                    )
+                }
+
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(paddingValues)
+                        .verticalScroll(rememberScrollState())
+                        .padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    // Header section
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        PetAvatar(species = pet.species)
+                        Spacer(modifier = Modifier.width(16.dp))
+                        Column {
+                            Text(
+                                text = pet.name,
+                                style = MaterialTheme.typography.headlineMedium,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Text(
+                                text = "${pet.species} • ${pet.breed}",
+                                style = MaterialTheme.typography.bodyLarge
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    // Tracker Cards
+                    TrackerCard(
+                        title = "Weight",
+                        value = uiState.latestWeight?.let { UnitFormatter.formatWeight(it.weight, uiState.weightUnit) } ?: "No data",
+                        subtitle = uiState.latestWeight?.date?.toLocalDate()?.toString() ?: "Tap to add",
+                        onClick = { onNavigateToWeightTracker(pet.id) }
+                    )
+
+                    TrackerCard(
+                        title = "Feeding Log",
+                        value = uiState.latestFeeding?.food ?: "No data",
+                        subtitle = uiState.latestFeeding?.time?.toLocalDate()?.toString() ?: "Tap to add",
+                        onClick = { onNavigateToFeedingLog(pet.id) }
+                    )
+
+                    TrackerCard(
+                        title = "Water",
+                        value = UnitFormatter.formatWater(uiState.todayWater, uiState.waterUnit),
+                        subtitle = "Today",
+                        onClick = { onNavigateToWaterTracker(pet.id) }
+                    )
+
+                    TrackerCard(
+                        title = "Medications",
+                        value = if (uiState.activeMedicationsCount > 0) "${uiState.activeMedicationsCount} Active" else "None",
+                        subtitle = "Tap to manage",
+                        onClick = { onNavigateToMedicationList(pet.id) }
+                    )
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    Button(
+                        onClick = { onNavigateToTimeline(pet.id) },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.secondary
                         )
-                        Text(
-                            text = "${pet.species} • ${pet.breed}",
-                            style = MaterialTheme.typography.bodyLarge
+                    ) {
+                        Text("View Health Timeline")
+                    }
+
+                    Button(
+                        onClick = { showFactsDialog = true },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.tertiary,
+                            contentColor = MaterialTheme.colorScheme.onTertiary
                         )
+                    ) {
+                        Text("💡 Fun Facts")
                     }
                 }
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // Tracker Cards
-                TrackerCard(
-                    title = "Weight",
-                    value = uiState.latestWeight?.let { UnitFormatter.formatWeight(it.weight, uiState.weightUnit) } ?: "No data",
-                    subtitle = uiState.latestWeight?.date?.toLocalDate()?.toString() ?: "Tap to add",
-                    onClick = { onNavigateToWeightTracker(pet.id) }
-                )
-
-                TrackerCard(
-                    title = "Feeding Log",
-                    value = uiState.latestFeeding?.food ?: "No data",
-                    subtitle = uiState.latestFeeding?.time?.toLocalDate()?.toString() ?: "Tap to add",
-                    onClick = { onNavigateToFeedingLog(pet.id) }
-                )
-
-                TrackerCard(
-                    title = "Water",
-                    value = UnitFormatter.formatWater(uiState.todayWater, uiState.waterUnit),
-                    subtitle = "Today",
-                    onClick = { onNavigateToWaterTracker(pet.id) }
-                )
-
-                TrackerCard(
-                    title = "Medications",
-                    value = if (uiState.activeMedicationsCount > 0) "${uiState.activeMedicationsCount} Active" else "None",
-                    subtitle = "Tap to manage",
-                    onClick = { onNavigateToMedicationList(pet.id) }
-                )
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                Button(
-                    onClick = { onNavigateToTimeline(pet.id) },
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.secondary
-                    )
-                ) {
-                    Text("View Health Timeline")
-                }
-            }
         }
     }
 }

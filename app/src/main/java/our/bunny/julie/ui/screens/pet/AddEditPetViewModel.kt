@@ -7,6 +7,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import our.bunny.julie.domain.model.Pet
@@ -47,6 +48,9 @@ class AddEditPetViewModel @Inject constructor(
         }
     }
 
+    private val _saveCompleteEvent = kotlinx.coroutines.flow.MutableSharedFlow<SaveCompleteEvent>()
+    val saveCompleteEvent = _saveCompleteEvent.asSharedFlow()
+
     fun onEvent(event: AddEditPetEvent) {
         when (event) {
             is AddEditPetEvent.EnteredName -> _uiState.update { it.copy(name = event.value) }
@@ -71,16 +75,21 @@ class AddEditPetViewModel @Inject constructor(
                         favoriteVet = uiState.value.favoriteVet,
                         favoriteFood = uiState.value.favoriteFood
                     )
-                    if (petId == -1L) {
+                    val isNewPet = petId == -1L
+                    val finalPetId = if (isNewPet) {
                         petRepository.insertPet(pet)
                     } else {
                         petRepository.updatePet(pet)
+                        petId
                     }
+                    _saveCompleteEvent.emit(SaveCompleteEvent(finalPetId, isNewPet, pet.species))
                 }
             }
         }
     }
 }
+
+data class SaveCompleteEvent(val petId: Long, val isNewPet: Boolean, val species: String)
 
 data class AddEditPetUiState(
     val name: String = "",

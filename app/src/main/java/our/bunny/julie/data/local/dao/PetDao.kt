@@ -21,7 +21,7 @@ interface PetDao {
     suspend fun getPetById(id: Long): PetEntity?
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertPet(pet: PetEntity)
+    suspend fun insertPet(pet: PetEntity): Long
 
     @Update
     suspend fun updatePet(pet: PetEntity)

@@ -24,8 +24,8 @@ class PetRepositoryImpl(
         return dao.getPetById(id)?.toDomainModel()
     }
 
-    override suspend fun insertPet(pet: Pet) {
-        dao.insertPet(PetEntity.fromDomainModel(pet))
+    override suspend fun insertPet(pet: Pet): Long {
+        return dao.insertPet(PetEntity.fromDomainModel(pet))
     }
 
     override suspend fun updatePet(pet: Pet) {

@@ -19,11 +19,34 @@ import androidx.compose.ui.Alignment
 @Composable
 fun AddEditPetScreen(
     onNavigateUp: () -> Unit,
+    onNavigateToPetDetail: (Long) -> Unit,
     viewModel: AddEditPetViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    var showFactsCarousel by remember { mutableStateOf<SaveCompleteEvent?>(null) }
+    
+    LaunchedEffect(viewModel) {
+        viewModel.saveCompleteEvent.collect { event ->
+            if (event.isNewPet) {
+                showFactsCarousel = event
+            } else {
+                onNavigateUp()
+            }
+        }
+    }
 
     val isFormValid = uiState.name.isNotBlank() && uiState.species.isNotBlank() && uiState.breed.isNotBlank() && uiState.sex.isNotBlank()
+
+    if (showFactsCarousel != null) {
+        PetFactsCarousel(
+            species = showFactsCarousel!!.species,
+            onDismiss = {
+                val newPetId = showFactsCarousel!!.petId
+                showFactsCarousel = null
+                onNavigateToPetDetail(newPetId)
+            }
+        )
+    }
 
     Scaffold(
         topBar = {
@@ -41,7 +64,7 @@ fun AddEditPetScreen(
                 onClick = {
                     if (isFormValid) {
                         viewModel.onEvent(AddEditPetEvent.SavePet)
-                        onNavigateUp()
+                        // Removed immediate onNavigateUp() here so we can wait for the event
                     }
                 },
                 containerColor = if (isFormValid) FloatingActionButtonDefaults.containerColor else MaterialTheme.colorScheme.surfaceVariant,

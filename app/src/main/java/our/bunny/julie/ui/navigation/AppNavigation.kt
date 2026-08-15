@@ -70,7 +70,11 @@ fun AppNavigation(navController: NavHostController, onOpenDrawer: () -> Unit) {
         ) {
             JulieAppScaffold(title = "Add/Edit Pet", onOpenDrawer = onOpenDrawer) { innerPadding ->
                 our.bunny.julie.ui.screens.pet.AddEditPetScreen(
-                    onNavigateUp = { navController.navigateUp() }
+                    onNavigateUp = { navController.navigateUp() },
+                    onNavigateToPetDetail = { id -> 
+                        navController.popBackStack() // Pop AddEditPetScreen
+                        navController.navigate(Screen.PetDetail.createRoute(id.toString())) 
+                    }
                 )
             }
         }
