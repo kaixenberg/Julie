@@ -22,6 +22,11 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.LaunchedEffect
+import android.Manifest
+import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -58,6 +63,29 @@ fun DashboardScreen(
     var isSearchActive by remember { mutableStateOf(false) }
     var isFilterExpanded by remember { mutableStateOf(false) }
     var selectedPetId by remember { mutableStateOf<Long?>(null) }
+    
+    val notificationsEnabled by viewModel.notificationsEnabled.collectAsState()
+    val hasRequestedPermission by viewModel.hasRequestedNotificationPermission.collectAsState()
+    val context = androidx.compose.ui.platform.LocalContext.current
+
+    val permissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (!isGranted) {
+            viewModel.disableNotifications()
+        }
+    }
+
+    LaunchedEffect(notificationsEnabled, hasRequestedPermission) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (notificationsEnabled && !hasRequestedPermission) {
+                if (androidx.core.content.ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                    viewModel.setHasRequestedNotificationPermission(true)
+                    permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                }
+            }
+        }
+    }
 
     BackHandler(enabled = selectedPetId != null) {
         selectedPetId = null

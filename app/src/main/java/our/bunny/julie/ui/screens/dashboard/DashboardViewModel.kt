@@ -50,6 +50,24 @@ class DashboardViewModel @Inject constructor(
     val searchQuery = MutableStateFlow("")
     val selectedSpecies = MutableStateFlow<Set<String>>(emptySet())
 
+    val notificationsEnabled: StateFlow<Boolean> = settingsRepository.notificationsEnabledFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
+        
+    val hasRequestedNotificationPermission: StateFlow<Boolean> = settingsRepository.hasRequestedNotificationPermissionFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+
+    fun disableNotifications() {
+        viewModelScope.launch {
+            settingsRepository.updateNotificationsEnabled(false)
+        }
+    }
+
+    fun setHasRequestedNotificationPermission(hasRequested: Boolean) {
+        viewModelScope.launch {
+            settingsRepository.setHasRequestedNotificationPermission(hasRequested)
+        }
+    }
+
     val availableSpecies: StateFlow<Set<String>> = petRepository.getAllPets()
         .map { pets -> pets.map { it.species }.filter { it.isNotBlank() }.toSet() }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptySet())
