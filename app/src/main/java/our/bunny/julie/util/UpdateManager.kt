@@ -17,7 +17,6 @@ import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import our.bunny.julie.BuildConfig
-import our.bunny.julie.receiver.UpdateReceiver
 import java.io.File
 import java.net.HttpURLConnection
 import java.net.URL
@@ -89,7 +88,7 @@ object UpdateManager {
             val twentyFourHours = 24 * 60 * 60 * 1000L
             if (System.currentTimeMillis() - lastModified < twentyFourHours) {
                 Toast.makeText(context, "Installing cached update...", Toast.LENGTH_SHORT).show()
-                installApkSession(context, apkFile)
+                installApk(context, apkFile)
                 return
             }
         }
@@ -127,36 +126,22 @@ object UpdateManager {
         return megAvailable >= 150
     }
 
-    fun installApkSession(context: Context, apkFile: File) {
-        val packageInstaller = context.packageManager.packageInstaller
-        val params = PackageInstaller.SessionParams(PackageInstaller.SessionParams.MODE_FULL_INSTALL)
-        var sessionId = -1
+    fun installApk(context: Context, apkFile: File) {
         try {
-            sessionId = packageInstaller.createSession(params)
-            val session = packageInstaller.openSession(sessionId)
-            
-            val out = session.openWrite("package", 0, -1)
-            apkFile.inputStream().use { input ->
-                input.copyTo(out)
+            val uri = androidx.core.content.FileProvider.getUriForFile(
+                context,
+                "${context.packageName}.fileprovider",
+                apkFile
+            )
+            val intent = Intent(Intent.ACTION_VIEW).apply {
+                setDataAndType(uri, "application/vnd.android.package-archive")
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             }
-            session.fsync(out)
-            out.close()
-
-            val intent = Intent(context, UpdateReceiver::class.java)
-            val pendingIntentFlags = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE
-            } else {
-                PendingIntent.FLAG_UPDATE_CURRENT
-            }
-            
-            val pendingIntent = PendingIntent.getBroadcast(context, 345, intent, pendingIntentFlags)
-            session.commit(pendingIntent.intentSender)
-            
+            context.startActivity(intent)
         } catch (e: Exception) {
             e.printStackTrace()
-            if (sessionId != -1) {
-                packageInstaller.abandonSession(sessionId)
-            }
+            Toast.makeText(context, "Failed to launch installer.", Toast.LENGTH_SHORT).show()
         }
     }
 }

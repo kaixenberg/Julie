@@ -64,9 +64,6 @@
             android:name=".widget.WidgetPinReceiver"
             android:exported="false" />
 
-        <receiver
-            android:name=".receiver.UpdateReceiver"
-            android:exported="false" />
 
         <receiver
             android:name=".receiver.DownloadReceiver"

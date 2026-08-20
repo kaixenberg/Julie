@@ -37,71 +37,15 @@ class DownloadReceiver : BroadcastReceiver() {
                             val file = File(uri.path ?: "")
                             if (file.exists()) {
                                 // Automatically attempt installation
-                                UpdateManager.installApkSession(context, file)
-                                
-                                // Show persistent notification so user can retry if it fails or they cancel
-                                showInstallNotification(context, file.absolutePath)
+                                UpdateManager.installApk(context, file)
                             }
                         }
                     }
                 }
             }
             cursor?.close()
-        } else if (intent.action == ACTION_RETRY_INSTALL) {
-            val apkPath = intent.getStringExtra(EXTRA_APK_PATH)
-            if (apkPath != null) {
-                val file = File(apkPath)
-                if (file.exists()) {
-                    UpdateManager.installApkSession(context, file)
-                }
-            }
         }
-    }
-
-    private fun showInstallNotification(context: Context, apkPath: String) {
-        val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        val channelId = "update_channel"
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(
-                channelId,
-                "App Updates",
-                NotificationManager.IMPORTANCE_HIGH
-            ).apply {
-                description = "Notifications for app updates"
-            }
-            notificationManager.createNotificationChannel(channel)
-        }
-
-        val retryIntent = Intent(context, DownloadReceiver::class.java).apply {
-            action = ACTION_RETRY_INSTALL
-            putExtra(EXTRA_APK_PATH, apkPath)
-        }
-
-        val pendingIntentFlags = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE
-        } else {
-            PendingIntent.FLAG_UPDATE_CURRENT
-        }
-
-        val pendingIntent = PendingIntent.getBroadcast(context, 1001, retryIntent, pendingIntentFlags)
-
-        val notification = NotificationCompat.Builder(context, channelId)
-            .setSmallIcon(R.mipmap.ic_launcher)
-            .setContentTitle("Julie Update Ready")
-            .setContentText("The update has been downloaded. Tap to install.")
-            .setPriority(NotificationCompat.PRIORITY_HIGH)
-            .setContentIntent(pendingIntent)
-            .setOngoing(true) // Persistent until updated or cleared manually
-            .setAutoCancel(false)
-            .build()
-
-        notificationManager.notify(NOTIFICATION_ID, notification)
-    }
-
-    companion object {
-        const val ACTION_RETRY_INSTALL = "our.bunny.julie.ACTION_RETRY_INSTALL"
-        const val EXTRA_APK_PATH = "extra_apk_path"
+    }    companion object {
         const val NOTIFICATION_ID = 5001
     }
 }
