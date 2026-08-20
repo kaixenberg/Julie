@@ -68,6 +68,14 @@
             android:name=".receiver.UpdateReceiver"
             android:exported="false" />
 
+        <receiver
+            android:name=".receiver.DownloadReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.DOWNLOAD_COMPLETE" />
+            </intent-filter>
+        </receiver>
+
             
         <receiver android:name=".receiver.BootReceiver" android:exported="true">
             <intent-filter>

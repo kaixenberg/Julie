@@ -7,20 +7,22 @@ import android.content.pm.PackageInstaller
 import android.os.Build
 import android.widget.Toast
 import java.io.File
-
+import android.app.NotificationManager
+import android.os.Environment
+import our.bunny.julie.receiver.DownloadReceiver
 class UpdateReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         val status = intent.getIntExtra(PackageInstaller.EXTRA_STATUS, PackageInstaller.STATUS_FAILURE)
-        
-        // Clean up the downloaded APK
-        val apkFile = File(context.cacheDir, "update.apk")
-        if (apkFile.exists()) {
-            apkFile.delete()
-        }
-
         when (status) {
             PackageInstaller.STATUS_SUCCESS -> {
                 Toast.makeText(context, "Update installed successfully!", Toast.LENGTH_SHORT).show()
+                // Clear the notification
+                val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+                notificationManager.cancel(DownloadReceiver.NOTIFICATION_ID)
+                
+                // Clear the APK cache only on success
+                val dir = context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS)
+                dir?.listFiles()?.forEach { if (it.name.startsWith("Julie-update") && it.extension == "apk") it.delete() }
             }
             PackageInstaller.STATUS_PENDING_USER_ACTION -> {
                 val confirmIntent = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {

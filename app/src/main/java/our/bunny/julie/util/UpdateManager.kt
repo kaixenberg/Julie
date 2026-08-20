@@ -79,78 +79,55 @@ object UpdateManager {
         return false
     }
 
-    suspend fun downloadAndInstallUpdate(context: Context, updateInfo: UpdateInfo) {
-        val hasInstallPermission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            context.packageManager.canRequestPackageInstalls()
-        } else {
-            true
+    fun downloadAndInstallUpdate(context: Context, updateInfo: UpdateInfo) {
+        val dir = context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS)
+        val apkFile = File(dir, "Julie-update-${updateInfo.latestVersion}.apk")
+        
+        // 24H rule check
+        if (apkFile.exists()) {
+            val lastModified = apkFile.lastModified()
+            val twentyFourHours = 24 * 60 * 60 * 1000L
+            if (System.currentTimeMillis() - lastModified < twentyFourHours) {
+                Toast.makeText(context, "Installing cached update...", Toast.LENGTH_SHORT).show()
+                installApkSession(context, apkFile)
+                return
+            }
+        }
+        
+        // Clear old downloads
+        dir?.listFiles()?.forEach { if (it.name.startsWith("Julie-update") && it.extension == "apk") it.delete() }
+        
+        // Storage check
+        if (!checkStorageSpace(context)) {
+            Toast.makeText(context, "Not enough storage to download update (Need 150MB+)", Toast.LENGTH_LONG).show()
+            return
         }
 
-        if (!hasInstallPermission) {
-            downloadToPublicFolder(context, updateInfo)
-        } else {
-            downloadAndInstallInternally(context, updateInfo)
-        }
-    }
-
-    private fun downloadToPublicFolder(context: Context, updateInfo: UpdateInfo) {
         try {
             val request = DownloadManager.Request(Uri.parse(updateInfo.downloadUrl))
                 .setTitle("Julie Update")
                 .setDescription("Downloading version ${updateInfo.latestVersion}")
                 .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
-                .setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, "Julie-${updateInfo.latestVersion}.apk")
+                .setDestinationInExternalFilesDir(context, Environment.DIRECTORY_DOWNLOADS, "Julie-update-${updateInfo.latestVersion}.apk")
             
             val downloadManager = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
             downloadManager.enqueue(request)
-            Toast.makeText(context, "Downloading update to Downloads folder. Please install manually.", Toast.LENGTH_LONG).show()
+            Toast.makeText(context, "Downloading update...", Toast.LENGTH_SHORT).show()
         } catch (e: Exception) {
             e.printStackTrace()
             Toast.makeText(context, "Failed to start download.", Toast.LENGTH_SHORT).show()
         }
     }
 
-    private suspend fun downloadAndInstallInternally(context: Context, updateInfo: UpdateInfo) = withContext(Dispatchers.IO) {
-        try {
-            withContext(Dispatchers.Main) {
-                Toast.makeText(context, "Downloading update in background...", Toast.LENGTH_SHORT).show()
-            }
-            
-            val apkFile = File(context.cacheDir, "update.apk")
-            if (apkFile.exists()) apkFile.delete()
-
-            val url = URL(updateInfo.downloadUrl)
-            val connection = url.openConnection() as HttpURLConnection
-            connection.requestMethod = "GET"
-            
-            var inputStream = connection.inputStream
-            // Basic redirect handling if URL is redirected to the actual download (e.g., github releases)
-            if (connection.responseCode in 300..399) {
-                val redirectUrl = connection.getHeaderField("Location")
-                if (redirectUrl != null) {
-                    val redirectConnection = URL(redirectUrl).openConnection() as HttpURLConnection
-                    redirectConnection.requestMethod = "GET"
-                    inputStream = redirectConnection.inputStream
-                }
-            }
-            
-            inputStream.use { input ->
-                apkFile.outputStream().use { output ->
-                    input.copyTo(output)
-                }
-            }
-            
-            installApkSession(context, apkFile)
-            
-        } catch (e: Exception) {
-            e.printStackTrace()
-            withContext(Dispatchers.Main) {
-                Toast.makeText(context, "Error downloading update.", Toast.LENGTH_SHORT).show()
-            }
-        }
+    private fun checkStorageSpace(context: Context): Boolean {
+        val path = context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS) ?: return true
+        val stat = android.os.StatFs(path.path)
+        val bytesAvailable = stat.blockSizeLong * stat.availableBlocksLong
+        val megAvailable = bytesAvailable / (1024 * 1024)
+        return megAvailable >= 150
     }
 
-    private fun installApkSession(context: Context, apkFile: File) {
+    fun installApkSession(context: Context, apkFile: File) {
         val packageInstaller = context.packageManager.packageInstaller
         val params = PackageInstaller.SessionParams(PackageInstaller.SessionParams.MODE_FULL_INSTALL)
         var sessionId = -1
