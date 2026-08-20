@@ -5,7 +5,7 @@
 </p>
 
 <p align="center">
-  <strong>A privacy-focused, fully offline pet health tracker for Android.</strong>
+  <strong>A privacy-focused, offline-first pet health tracker for Android.</strong>
 </p>
 
 <p align="center">
@@ -14,7 +14,13 @@
   <img src="https://img.shields.io/badge/Target%20SDK-37-blue?style=flat-square" alt="Target SDK" />
   <img src="https://img.shields.io/badge/Language-Kotlin-7F52FF?style=flat-square&logo=kotlin&logoColor=white" alt="Language" />
   <img src="https://img.shields.io/badge/UI-Jetpack%20Compose-4285F4?style=flat-square&logo=jetpackcompose&logoColor=white" alt="Compose" />
-  <img src="https://img.shields.io/badge/Privacy-100%25%20Offline-success?style=flat-square" alt="Offline" />
+  <img src="https://img.shields.io/badge/Privacy-Offline%20First-success?style=flat-square" alt="Offline First" />
+</p>
+
+<p align="center">
+  <a href="https://github.com/kaixenberg/Julie/releases/latest">
+    <img src="https://img.shields.io/badge/Download-Latest%20Release-2ea44f?style=for-the-badge&logo=github" alt="Download Latest Release" />
+  </a>
 </p>
 
 ---
