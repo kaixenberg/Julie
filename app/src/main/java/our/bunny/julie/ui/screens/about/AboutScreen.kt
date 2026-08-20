@@ -197,8 +197,20 @@ fun AboutScreen(
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     Spacer(modifier = Modifier.height(4.dp))
+                    
+                    val packageInfo = try {
+                        context.packageManager.getPackageInfo(context.packageName, 0)
+                    } catch (e: Exception) { null }
+                    
+                    val versionName = packageInfo?.versionName ?: BuildConfig.VERSION_NAME
+                    val versionCode = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {
+                        packageInfo?.longVersionCode?.toString() ?: BuildConfig.VERSION_CODE.toString()
+                    } else {
+                        packageInfo?.versionCode?.toString() ?: BuildConfig.VERSION_CODE.toString()
+                    }
+
                     Text(
-                        text = "v${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})",
+                        text = "v$versionName ($versionCode)",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
