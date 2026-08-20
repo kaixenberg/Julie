@@ -15,7 +15,7 @@ android {
     defaultConfig {
         applicationId = "our.bunny.julie"
         minSdk = 26
-        targetSdk = 35
+        targetSdk = 37
         versionCode = 3
         versionName = "1.0.1"
 
