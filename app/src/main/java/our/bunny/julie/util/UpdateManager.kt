@@ -9,6 +9,7 @@ import android.net.Uri
 import android.os.Build
 import android.os.Environment
 import android.widget.Toast
+import android.util.Log
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
@@ -37,6 +38,7 @@ object UpdateManager {
             val connection = url.openConnection() as HttpURLConnection
             connection.requestMethod = "GET"
             connection.setRequestProperty("Accept", "application/vnd.github.v3+json")
+            connection.setRequestProperty("User-Agent", "Julie-App-Updater")
             
             if (connection.responseCode == HttpURLConnection.HTTP_OK) {
                 val response = connection.inputStream.bufferedReader().use { it.readText() }
@@ -49,13 +51,20 @@ object UpdateManager {
                 if (downloadUrl != null) {
                     val remoteVersion = tagName.removePrefix("v")
                     val currentVersion = BuildConfig.VERSION_NAME.removePrefix("v")
+                    Log.d("UpdateManager", "remoteVersion: $remoteVersion, currentVersion: $currentVersion")
                     
                     if (isVersionGreater(remoteVersion, currentVersion)) {
+                        Log.d("UpdateManager", "Update available!")
                         return@withContext UpdateInfo(true, remoteVersion, downloadUrl)
                     } else {
+                        Log.d("UpdateManager", "No update available")
                         return@withContext UpdateInfo(false, remoteVersion, "")
                     }
+                } else {
+                    Log.e("UpdateManager", "downloadUrl is null")
                 }
+            } else {
+                Log.e("UpdateManager", "Response Code: ${connection.responseCode}")
             }
             null
         } catch (e: Exception) {
@@ -79,11 +88,11 @@ object UpdateManager {
     }
 
     fun downloadAndInstallUpdate(context: Context, updateInfo: UpdateInfo) {
-        val dir = context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS)
+        val dir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
         val apkFile = File(dir, "Julie-update-${updateInfo.latestVersion}.apk")
-        
-        // 24H rule check
-        if (apkFile.exists()) {
+
+        // Use cached APK only if it already exists, is recent, AND the version is actually newer
+        if (apkFile.exists() && isVersionGreater(updateInfo.latestVersion, BuildConfig.VERSION_NAME)) {
             val lastModified = apkFile.lastModified()
             val twentyFourHours = 24 * 60 * 60 * 1000L
             if (System.currentTimeMillis() - lastModified < twentyFourHours) {
@@ -92,12 +101,12 @@ object UpdateManager {
                 return
             }
         }
-        
-        // Clear old downloads
-        dir?.listFiles()?.forEach { if (it.name.startsWith("Julie-update") && it.extension == "apk") it.delete() }
-        
+
+        // Clear old Julie update APKs from public Downloads
+        dir.listFiles()?.forEach { if (it.name.startsWith("Julie-update") && it.extension == "apk") it.delete() }
+
         // Storage check
-        if (!checkStorageSpace(context)) {
+        if (!checkStorageSpace()) {
             Toast.makeText(context, "Not enough storage to download update (Need 150MB+)", Toast.LENGTH_LONG).show()
             return
         }
@@ -107,8 +116,8 @@ object UpdateManager {
                 .setTitle("Julie Update")
                 .setDescription("Downloading version ${updateInfo.latestVersion}")
                 .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
-                .setDestinationInExternalFilesDir(context, Environment.DIRECTORY_DOWNLOADS, "Julie-update-${updateInfo.latestVersion}.apk")
-            
+                .setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, "Julie-update-${updateInfo.latestVersion}.apk")
+
             val downloadManager = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
             downloadManager.enqueue(request)
             Toast.makeText(context, "Downloading update...", Toast.LENGTH_SHORT).show()
@@ -118,8 +127,8 @@ object UpdateManager {
         }
     }
 
-    private fun checkStorageSpace(context: Context): Boolean {
-        val path = context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS) ?: return true
+    private fun checkStorageSpace(): Boolean {
+        val path = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
         val stat = android.os.StatFs(path.path)
         val bytesAvailable = stat.blockSizeLong * stat.availableBlocksLong
         val megAvailable = bytesAvailable / (1024 * 1024)
