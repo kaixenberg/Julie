@@ -39,35 +39,38 @@ object UpdateManager {
             connection.requestMethod = "GET"
             connection.setRequestProperty("Accept", "application/vnd.github.v3+json")
             connection.setRequestProperty("User-Agent", "Julie-App-Updater")
-            
+            connection.connectTimeout = 15_000
+            connection.readTimeout = 15_000
+
             if (connection.responseCode == HttpURLConnection.HTTP_OK) {
                 val response = connection.inputStream.bufferedReader().use { it.readText() }
                 val json = Json.parseToJsonElement(response).jsonObject
-                
+
                 val tagName = json["tag_name"]?.jsonPrimitive?.content ?: return@withContext null
-                val assets = json["assets"]?.jsonArray
-                val downloadUrl = assets?.firstOrNull()?.jsonObject?.get("browser_download_url")?.jsonPrimitive?.content
-                
-                if (downloadUrl != null) {
-                    val remoteVersion = tagName.removePrefix("v")
-                    val currentVersion = BuildConfig.VERSION_NAME.removePrefix("v")
-                    Log.d("UpdateManager", "remoteVersion: $remoteVersion, currentVersion: $currentVersion")
-                    
-                    if (isVersionGreater(remoteVersion, currentVersion)) {
-                        Log.d("UpdateManager", "Update available!")
-                        return@withContext UpdateInfo(true, remoteVersion, downloadUrl)
-                    } else {
-                        Log.d("UpdateManager", "No update available")
-                        return@withContext UpdateInfo(false, remoteVersion, "")
-                    }
-                } else {
-                    Log.e("UpdateManager", "downloadUrl is null")
+                val remoteVersion = tagName.removePrefix("v")
+                val currentVersion = BuildConfig.VERSION_NAME.removePrefix("v")
+                Log.d("UpdateManager", "remoteVersion: $remoteVersion, currentVersion: $currentVersion")
+
+                if (!isVersionGreater(remoteVersion, currentVersion)) {
+                    Log.d("UpdateManager", "No update available")
+                    return@withContext UpdateInfo(false, remoteVersion, "")
                 }
+
+                // Update is available — now look up the download URL
+                val assets = json["assets"]?.jsonArray
+                val downloadUrl = assets
+                    ?.mapNotNull { it.jsonObject["browser_download_url"]?.jsonPrimitive?.content }
+                    ?.firstOrNull { it.contains("arm64") }
+                    ?: assets?.firstOrNull()?.jsonObject?.get("browser_download_url")?.jsonPrimitive?.content
+
+                Log.d("UpdateManager", "Update available! downloadUrl: $downloadUrl")
+                return@withContext UpdateInfo(true, remoteVersion, downloadUrl ?: "")
             } else {
                 Log.e("UpdateManager", "Response Code: ${connection.responseCode}")
             }
             null
         } catch (e: Exception) {
+            Log.e("UpdateManager", "checkForUpdates failed: ${e.message}")
             e.printStackTrace()
             null
         }

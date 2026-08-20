@@ -300,10 +300,10 @@ fun AboutScreen(
                         isCheckingUpdate = true
                         coroutineScope.launch {
                             val updateInfo = UpdateManager.checkForUpdates()
-                            if (updateInfo != null && updateInfo.isUpdateAvailable) {
-                                UpdateManager.downloadAndInstallUpdate(context, updateInfo)
-                            } else {
-                                Toast.makeText(context, "You are on the latest version", Toast.LENGTH_SHORT).show()
+                            when {
+                                updateInfo == null -> Toast.makeText(context, "Could not reach update server. Check your internet connection.", Toast.LENGTH_LONG).show()
+                                updateInfo.isUpdateAvailable -> UpdateManager.downloadAndInstallUpdate(context, updateInfo)
+                                else -> Toast.makeText(context, "You are on the latest version", Toast.LENGTH_SHORT).show()
                             }
                             isCheckingUpdate = false
                         }
